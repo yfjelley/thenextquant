@@ -29,8 +29,13 @@ class MyStrategy:
         self.create_order_price = "0.0"  # 创建订单的价格
 
         # 交易模块
+        cc = {
+            "account": self.access_key,
+            "access_key": self.access_key,
+            "secret_key": self.secret_key
+        }
         self.trader = Trade(self.strategy, self.platform, self.symbol, self.account,
-                            order_update_callback=self.on_event_order_update)
+                            order_update_callback=self.on_event_order_update, **cc)
 
         # 订阅行情
         Market(const.MARKET_TYPE_ORDERBOOK, const.BINANCE, self.symbol, self.on_event_orderbook_update)
