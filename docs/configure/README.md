@@ -11,7 +11,7 @@
 from quant.config import config
 
 config.name  # 使用配置里的name字段
-config.abc  # 使用配置里的abd字段
+config.abc  # 使用配置里的abc字段
 ```
 
 ## 系统配置参数
@@ -80,8 +80,8 @@ HTTP代理配置。
 > 注意: 此配置为全局配置，将作用到任何HTTP请求；
 
 
-##### 3. RABBITMQ
-RabbitMQ代理配置。
+##### 4. RABBITMQ
+RabbitMQ服务配置。
 
 **示例**:
 ```json

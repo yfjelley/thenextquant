@@ -40,13 +40,6 @@ logger.error("ERROR: server down!")
 logger.exception("something wrong!")
 ```
 
-**参数说明**:
-- log_level `string` 日志级别 DEBUG/INFO
-- log_path `string` 日志输出路径
-- logfile_name string 日志文件名
-- clear `boolean` 初始化的时候，是否清理之前的日志文件
-- backup_count `int` 保存按天分割的日志文件个数，默认0为永久保存所有日志文件
-
 
 ##### 3. INFO日志
 ```python

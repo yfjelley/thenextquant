@@ -1,22 +1,25 @@
 ## 行情
 
-通过行情模块(market)，可以订阅任意交易所的任意交易对的实时行情，包括订单薄(Orderbook)、K线(KLine)、成交(Trade)、交易(Ticker)，
+通过行情模块(market)，可以订阅任意交易所的任意交易对的实时行情，包括订单薄(Orderbook)、K线(KLine)、成交(Trade)，
 根据不同交易所提供的行情信息，实时将行情信息推送给策略；
 
 在订阅行情之前，需要先部署 `行情服务器`，行情服务器将通过 REST API 或 Websocket 的方式从交易所获取实时行情信息，并将行情信息按照
 统一的数据格式打包，通过事件的形式发布至事件中心；
 
 
-### 行情模块使用
+### 1. 行情模块使用
 
 ```python
 # 导入模块
 from quant import const
+from quant.utils import logger
 from quant.market import Market, Orderbook
 
 
 # 订阅订单薄行情，注意此处注册的回调函数是`async` 异步函数，回调参数为 `orderbook` 对象，数据结构查看下边的介绍。
-async def on_event_orderbook_update(orderbook: Orderbook): pass
+async def on_event_orderbook_update(orderbook: Orderbook):
+    logger.info("orderbook:", orderbook)
+
 Market(const.MARKET_TYPE_ORDERBOOK, const.BINANCE, "ETH/BTC", on_event_orderbook_update)
 ```
 
@@ -26,15 +29,15 @@ from quant import const
 
 const.MARKET_TYPE_ORDERBOOK  # 订单薄(Orderbook)
 const.MARKET_TYPE_KLINE  # K线(KLine)
-const.MARKET_TYPE_TRADE  # K线(KLine)
+const.MARKET_TYPE_TRADE  # 成交(KLine)
 ```
 
 
-### 行情数据结构
+### 2. 行情数据结构
 
 所有交易平台的行情，全部使用统一的数据结构；
 
-#### 订单薄(Orderbook)
+#### 2.1 订单薄(Orderbook)
 ```json
 {
     "platform": "binance",
@@ -57,7 +60,7 @@ const.MARKET_TYPE_TRADE  # K线(KLine)
 - timestamp `int` 时间戳(毫秒)
 
 
-#### K线(KLine)
+#### 2.2 K线(KLine)
 ```json
 {
     "platform": "okex",
@@ -82,7 +85,7 @@ const.MARKET_TYPE_TRADE  # K线(KLine)
 - timestamp `int` 时间戳(毫秒)
 
 
-#### 交易数据(Trade)
+#### 2.3 交易数据(Trade)
 ```json
 {
     "platform": "okex", 
