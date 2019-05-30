@@ -30,7 +30,6 @@ class MyStrategy:
 
         # 交易模块
         self.trader = Trade(self.strategy, self.platform, self.symbol, self.account,
-                            asset_update_callback=self.on_event_asset_update,
                             order_update_callback=self.on_event_order_update)
 
         # 订阅行情

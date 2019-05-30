@@ -66,7 +66,7 @@ python src/main.py config.json
 - [日志打印](docs/others/logger.md)
 - [行情](docs/market.md)
 - [交易](docs/trade.md)
-- [定时任务 & 服务器心跳](docs/others/tasks.md)
+- [定时任务](docs/others/tasks.md)
 
 
 ### 当前支持交易所

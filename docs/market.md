@@ -55,8 +55,8 @@ const.MARKET_TYPE_TRADE  # 成交(KLine)
 **字段说明**:
 - platform `string` 交易平台
 - symbol `string` 交易对
-- asks `list` 卖盘 `[price, quantity]`
-- bids `list` 买盘 `[price, quantity]`
+- asks `list` 卖盘 `[[price, quantity], ...]`
+- bids `list` 买盘 `[[price, quantity], ...]`
 - timestamp `int` 时间戳(毫秒)
 
 

@@ -1,12 +1,10 @@
 ## 交易
 
-通过交易模块(trade)，可以在任意交易平台发起交易，包括下单(create_order)、撤单(revoke_order)、查询订单状态(order_status)、
-查询未完全成交订单(orders)等功能；
+通过交易模块(trade)，可以在任意交易平台发起交易，包括下单(create_order)、撤单(revoke_order)、查询订单状态(order status)、
+查询未完全成交订单(get_open_order_nos)等功能；
 
 策略完成下单之后，底层框架将定时或实时将最新的订单状态更新通过策略注册的回调函数传递给策略，策略能够在第一时间感知到拿到订单状态
 更新数据；
-
-```
 
 
 ### 交易模块使用
@@ -16,6 +14,7 @@
 from quant import const
 from quant import order
 from quant.trade import Trade
+from quant.utils import logger
 
 # 初始化
 platform = const.BINANCE  # 交易平台 假设是binance
@@ -26,14 +25,11 @@ symbol = "ETH/BTC"  # 交易对
 name = "my_test_strategy"  # 自定义的策略名称
 
 # 注册订单更新回调函数，注意此处注册的回调函数是 `async` 异步函数，回调参数为 `order` 对象，数据结构请查看下边的介绍。
-async def on_event_order_update(order): pass
-
-# 注册订单更新回调函数，注意此处注册的回调函数是 `async` 异步函数，回调参数为 `asset` 对象
-async def on_event_asset_update(asset): pass
+async def on_event_order_update(order):
+    logger.info("order:", order)
 
 # 创建trade对象
 trader = Trade(platform, account, access_key, secret_key, symbol, name,
-                asset_update_callback=on_event_asset_update,
                 order_update_callback=on_event_order_update)
 
 # 下单
@@ -49,7 +45,7 @@ await trader.revoke_order(order_no)  # 注意，此函数需要在 `async` 异�
 
 
 # 查询所有未成交订单id列表
-order_nos = await trader.get_open_orders()  # 注意，此函数需要在 `async` 异步函数里执行
+order_nos = await trader.get_open_order_nos()  # 注意，此函数需要在 `async` 异步函数里执行
 
 
 # 查询当前所有未成交订单数据
@@ -105,4 +101,8 @@ o.quantity  # 委托数量（限价单）
 o.remain  # 剩余未成交数量
 o.status  # 委托单状态
 o.timestamp  # 创建订单时间戳(毫秒)
+o.avg_price  # 成交均价
+o.trade_type  # 合约订单类型 开多/开空/平多/平空
+o.ctime  # 创建订单时间戳
+o.utime  # 交易所订单更新时间
 ```
