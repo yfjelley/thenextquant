@@ -88,4 +88,4 @@ python src/main.py config.json
 ### 有任何问题，欢迎联系我们
 
 - 微信二维码  
-[img](./docs/images/wx_qrcode.png)
+![](./docs/images/wx_qrcode.png =200x200)
