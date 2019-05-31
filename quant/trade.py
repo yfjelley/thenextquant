@@ -11,7 +11,7 @@ from quant.utils import logger
 from quant.order import ORDER_TYPE_LIMIT
 from quant.const import OKEX, OKEX_FUTURE, DERIBIT, BITMEX, BINANCE
 from quant.platform.okex import OKExTrade
-# from quant.platform.bitmex.trade import BitmexTrade
+from quant.platform.bitmex import BitmexTrade
 from quant.platform.binance import BinanceTrade
 from quant.platform.deribit import DeribitTrade
 from quant.platform.okex_future import OKExFutureTrade
@@ -46,8 +46,7 @@ class Trade:
                                    order_update_callback=order_update_callback,
                                    position_update_callback=position_update_callback)
         elif platform == BITMEX:
-            self._t = BitmexTrade(kwargs["account"], strategy, symbol, kwargs["host"], kwargs["wss"],
-                                  kwargs["access_key"], kwargs["secret_key"],
+            self._t = BitmexTrade(account, strategy, symbol, host, wss, access_key, secret_key,
                                   order_update_callback=order_update_callback,
                                   position_update_callback=position_update_callback)
         elif platform == BINANCE:

@@ -27,7 +27,7 @@ from quant.order import ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED, ORD
     ORDER_STATUS_CANCELED, ORDER_STATUS_FAILED
 
 
-__all__ = ("BinanceRestAPI", )
+__all__ = ("BinanceRestAPI", "BinanceTrade", )
 
 
 class BinanceRestAPI:
