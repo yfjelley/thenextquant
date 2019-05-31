@@ -3,6 +3,7 @@
 """
 Bitmex REST API & Trade 模块
 https://www.bitmex.com/app/wsAPI
+https://www.bitmex.com/api/explorer/swagger.json
 
 Author: HuangTao
 Date:   2018/08/09

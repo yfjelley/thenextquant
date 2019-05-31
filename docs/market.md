@@ -9,6 +9,7 @@
 
 ### 1. 行情模块使用
 
+> 此处以订单薄使用为例，订阅Binance的 `ETH/BTC` 交易对订单薄数据
 ```python
 # 导入模块
 from quant import const
@@ -19,6 +20,12 @@ from quant.market import Market, Orderbook
 # 订阅订单薄行情，注意此处注册的回调函数是`async` 异步函数，回调参数为 `orderbook` 对象，数据结构查看下边的介绍。
 async def on_event_orderbook_update(orderbook: Orderbook):
     logger.info("orderbook:", orderbook)
+    logger.info("platform:", orderbook.platform)  # 打印行情平台
+    logger.info("symbol:", orderbook.symbol)  # 打印行情交易对
+    logger.info("asks:", orderbook.asks)  # 打印卖盘数据
+    logger.info("bids:", orderbook.bids)  # 打印买盘数据 
+    logger.info("timestamp:", orderbook.timestamp)  # 打印行情更新时间戳(毫秒)
+    
 
 Market(const.MARKET_TYPE_ORDERBOOK, const.BINANCE, "ETH/BTC", on_event_orderbook_update)
 ```
@@ -38,6 +45,20 @@ const.MARKET_TYPE_TRADE  # 成交(KLine)
 所有交易平台的行情，全部使用统一的数据结构；
 
 #### 2.1 订单薄(Orderbook)
+
+- 订单薄模块
+```python
+from quant.market import Orderbook
+
+Orderbook.platform  # 订单薄平台
+Orderbook.symbol  # 订单薄交易对
+Orderbook.asks  # 订单薄买盘数据
+Orderbook.bids  # 订单薄买盘数据
+Orderbook.timestamp  # 订单薄更新时间戳(毫秒)
+Orderbook.data  # 订单薄数据
+```
+
+- 订单薄数据结构
 ```json
 {
     "platform": "binance",
@@ -52,15 +73,32 @@ const.MARKET_TYPE_TRADE  # 成交(KLine)
 }
 ```
 
-**字段说明**:
-- platform `string` 交易平台
-- symbol `string` 交易对
-- asks `list` 卖盘 `[[price, quantity], ...]`
-- bids `list` 买盘 `[[price, quantity], ...]`
-- timestamp `int` 时间戳(毫秒)
+- 字段说明
+    - platform `string` 交易平台
+    - symbol `string` 交易对
+    - asks `list` 卖盘 `[[price, quantity], ...]`
+    - bids `list` 买盘 `[[price, quantity], ...]`
+    - timestamp `int` 时间戳(毫秒)
 
 
 #### 2.2 K线(KLine)
+
+- K线模块
+```python
+from quant.market import Kline
+
+Kline.platform  # 交易平台
+Kline.symbol  # 交易对
+Kline.open  # 开盘价
+Kline.high  # 最高价
+Kline.low  # 最低价
+Kline.close  # 收盘价
+Kline.volume  # 成交量
+Kline.timestamp  # 时间戳(毫秒)
+Kline.data  # K线数据
+```
+
+- K线数据结构
 ```json
 {
     "platform": "okex",
@@ -74,18 +112,32 @@ const.MARKET_TYPE_TRADE  # 成交(KLine)
 }
 ```
 
-**字段说明**:
-- platform `string` 交易平台
-- symbol `string` 交易对
-- open `string` 开盘价
-- high `string` 最高价
-- low `string` 最低价
-- close `string` 收盘价
-- volume `string` 成交量
-- timestamp `int` 时间戳(毫秒)
+- 字段说明
+    - platform `string` 交易平台
+    - symbol `string` 交易对
+    - open `string` 开盘价
+    - high `string` 最高价
+    - low `string` 最低价
+    - close `string` 收盘价
+    - volume `string` 成交量
+    - timestamp `int` 时间戳(毫秒)
 
 
-#### 2.3 交易数据(Trade)
+#### 2.3 成交(Trade)
+
+- 成交模块
+```python
+from quant.market import Trade
+
+Trade.platform  # 交易平台
+Trade.symbol  # 交易对
+Trade.action  # 操作类型 BUY 买入 / SELL 卖出
+Trade.price  # 价格
+Trade.quantity  # 数量
+Trade.timestamp  # 时间戳(毫秒)
+```
+
+- 成交数据结构
 ```json
 {
     "platform": "okex", 
@@ -97,10 +149,10 @@ const.MARKET_TYPE_TRADE  # 成交(KLine)
 }
 ```
 
-**字段说明**:
-- platform `string` 交易平台
-- symbol `string` 交易对
-- action `string` 操作类型 BUY 买入 / SELL 卖出
-- price `string` 价格
-- quantity `string` 数量
-- timestamp `int` 时间戳(毫秒)
+- 字段说明
+    - platform `string` 交易平台
+    - symbol `string` 交易对
+    - action `string` 操作类型 BUY 买入 / SELL 卖出
+    - price `string` 价格
+    - quantity `string` 数量
+    - timestamp `int` 时间戳(毫秒)
