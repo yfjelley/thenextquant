@@ -1,6 +1,13 @@
 # Change Logs
 
 
+### v0.0.7
+
+*Date: 2019/05/31*  
+*Summary:*
+- Add [Bitmex exchange](https://www.bitmex.com) module
+
+
 ### v0.0.5
 
 *Date: 2019/05/30*  

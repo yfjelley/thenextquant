@@ -63,18 +63,19 @@ python src/main.py config.json
 本框架使用的是Python原生异步库(asyncio)实现异步事件驱动，所以在使用之前，需要先了解 [Python Asyncio](https://docs.python.org/3/library/asyncio.html)。
 
 - [服务配置](docs/configure/README.md)
-- [日志打印](docs/others/logger.md)
 - [行情](docs/market.md)
 - [交易](docs/trade.md)
-- [定时任务](docs/others/tasks.md)
+- 当前支持交易所
+    - [Binance](https://www.binance.com)
+    - [OKEx](https://www.okex.me/)
+    - [OKEx Future](https://www.okex.me/future/trade)
+    - [Deribit](https://www.deribit.com/)
+    - [Bitmex](https://www.bitmex.com)
+    - To be continued ...
 
-
-### 当前支持交易所
-- [Binance](https://www.binance.com)
-- [OKEx](https://www.okex.me/)
-- [OKEx Future](https://www.okex.me/future/trade)
-- [Deribit](https://www.deribit.com/)
-- To be continued ...
+- 其它
+    - [日志打印](docs/others/logger.md)
+    - [定时任务](docs/others/tasks.md)
 
 
 ### Change Logs
