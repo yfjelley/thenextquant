@@ -20,6 +20,7 @@ from quant.utils import tools
 from quant.utils import logger
 from quant.position import Position
 from quant.const import BITMEX
+from quant.tasks import SingleTask
 from quant.utils.websocket import Websocket
 from quant.utils.http_client import AsyncHttpRequests
 from quant.utils.decorator import async_method_locker
@@ -225,11 +226,11 @@ class BitmexTrade(Websocket):
             if table == "order":
                 order = self._update_order(data)
                 if order and self._order_update_callback:
-                    await asyncio.get_event_loop().create_task(self._order_update_callback(order))
+                    SingleTask.run(self._order_update_callback, order)
             elif table == "position":
                 self._update_position(data)
                 if self._position_update_callback:
-                    await asyncio.get_event_loop().create_task(self._position_update_callback(self.position))
+                    SingleTask.run(self._position_update_callback, self.position)
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
         """ 创建订单
