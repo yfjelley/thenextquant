@@ -24,7 +24,7 @@ class Websocket:
         """ 初始化
         @param url 建立websocket的地址
         @param check_conn_interval 检查websocket连接时间间隔
-        @param send_hb_interval 发送心跳时间间隔
+        @param send_hb_interval 发送心跳时间间隔，如果是0就不发送心跳消息
         """
         self._url = url
         self._ws = None  # websocket连接对象
@@ -38,7 +38,8 @@ class Websocket:
         # 注册服务 检查连接是否正常
         heartbeat.register(self._check_connection, self._check_conn_interval)
         # 注册服务 发送心跳
-        heartbeat.register(self._send_heartbeat_msg, self._send_hb_interval)
+        if self._send_hb_interval > 0:
+            heartbeat.register(self._send_heartbeat_msg, self._send_hb_interval)
         # 建立websocket连接
         asyncio.get_event_loop().create_task(self._connect())
 
