@@ -71,6 +71,7 @@ python src/main.py config.json
     - [OKEx Future](https://www.okex.me/future/trade)
     - [Deribit](https://www.deribit.com/)
     - [Bitmex](https://www.bitmex.com)
+    - [Huobi](https://www.hbg.com)
     - To be continued ...
 
 - 其它
