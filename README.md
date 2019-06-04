@@ -19,13 +19,13 @@
 ### 安装
 使用 `pip` 可以简单方便安装:
 ```text
-pip install -e git+https://github.com/TheNextQuant/thenextquant.git#egg=thenextquant
+pip install thenextquant
 ```
 
 or
 
 ```text
-pip install thenextquant
+pip install -e git+https://github.com/TheNextQuant/thenextquant.git#egg=thenextquant
 ```
 
 ### Demo使用示例
@@ -49,7 +49,7 @@ ProjectName
 ```
 
 - 快速体验示例
-    [Demo](example)
+    [Demo](example/demo/README.md)
 
 
 - 运行
@@ -66,7 +66,7 @@ python src/main.py config.json
 - [行情](docs/market.md)
 - [交易](docs/trade.md)
 - 当前支持交易所
-    - [Binance](https://www.binance.com)
+    - [Binance](example/binance/binance.md)
     - [OKEx](https://www.okex.me/)
     - [OKEx Future](https://www.okex.me/future/trade)
     - [Deribit](https://www.deribit.com/)
@@ -75,6 +75,7 @@ python src/main.py config.json
     - To be continued ...
 
 - 其它
+    - [安装RabbitMQ](docs/others/rabbitmq_deploy.md)
     - [日志打印](docs/others/logger.md)
     - [定时任务](docs/others/tasks.md)
 
