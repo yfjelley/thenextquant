@@ -1,6 +1,13 @@
 # Change Logs
 
 
+### v0.0.8
+
+*Date: 2019/06/03*  
+*Summary:*
+- Add [Huobi exchange](https://www.hbg.com) module
+
+
 ### v0.0.7
 
 *Date: 2019/05/31*  
