@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
 ### 启动程序
 
-以上，我们介绍了如何使用 `thenextquant` 开发自己的策略，这里是完整的 [策略代码](./main.py) 以及 配置文件[参考这里](./config.json)。
+以上，我们介绍了如何使用 `thenextquant` 开发自己的策略，这里是完整的 [策略代码](./main.py) 以及 [配置文件](./config.json)。
 
 现在让我们来启动程序:
 ```text
