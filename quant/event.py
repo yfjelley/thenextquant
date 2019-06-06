@@ -15,7 +15,7 @@ import asyncio
 
 import aioamqp
 
-from quant.utils import tools
+from quant import const
 from quant.utils import logger
 from quant.config import config
 from quant.tasks import LoopRunTask, SingleTask
@@ -23,8 +23,8 @@ from quant.utils.decorator import async_method_locker
 from quant.market import Orderbook, Trade, Kline
 
 
-__all__ = ("EventCenter", "EventConfig", "EventHeartbeat", "EventAsset", "EventOrder", "EventKline", "EventKline5Min",
-           "EventKline15Min", "EventOrderbook", "EventTrade")
+__all__ = ("EventCenter", "EventConfig", "EventHeartbeat", "EventAsset", "EventOrder", "EventKline", "EventOrderbook",
+           "EventTrade")
 
 
 class Event:
@@ -134,108 +134,81 @@ class Event:
 class EventConfig(Event):
     """ 配置更新事件
     * NOTE:
-        订阅：配置模块
         发布：管理工具
+        订阅：配置模块
     """
-    EXCHANGE = "config"
-    QUEUE = None
-    NAME = "EVENT_CONFIG"
 
     def __init__(self, server_id=None, params=None):
         """ 初始化
         """
         routing_key = "{server_id}".format(server_id=server_id)
-        self.ROUTING_KEY = routing_key
-        self.server_id = server_id
-        self.params = params
         data = {
             "server_id": server_id,
             "params": params
         }
-        super(EventConfig, self).__init__(data)
+        super(EventConfig, self).__init__(name="EVENT_CONFIG", exchange="Config", routing_key=routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
         """
-        self.server_id = self._data.get("server_id")
-        self.params = self._data.get("params")
+        pass
 
 
 class EventHeartbeat(Event):
     """ 服务心跳事件
     * NOTE:
         订阅：监控模块
-        发布：业务服务进程
+        发布：业务服务
     """
-    EXCHANGE = "heartbeat"
-    QUEUE = None
-    NAME = "EVENT_HEARTBEAT"
 
     def __init__(self, server_id=None, count=None):
         """ 初始化
         @param server_id 服务进程id
         @param count 心跳次数
         """
-        self.server_id = server_id
-        self.count = count
         data = {
             "server_id": server_id,
             "count": count
         }
-        super(EventHeartbeat, self).__init__(data)
+        super(EventHeartbeat, self).__init__(name="EVENT_HEARTBEAT", exchange="Heartbeat", data=data)
 
     def parse(self):
         """ 解析self._data数据
         """
-        self.server_id = self._data.get("server_id")
-        self.count = self._data.get("count")
+        pass
 
 
 class EventAsset(Event):
     """ 资产更新事件
     * NOTE:
+        发布：资产服务
         订阅：业务模块
-        发布：Asset资产服务器
     """
-    EXCHANGE = "asset"
-    QUEUE = None
-    NAME = "EVENT_ASSET"
 
     def __init__(self, platform=None, account=None, assets=None, timestamp=None):
         """ 初始化
         """
-        timestamp = timestamp or tools.get_cur_timestamp_ms()
-        self.ROUTING_KEY = "{platform}.{account}".format(platform=platform, account=account)
-        self.platform = platform
-        self.account = account
-        self.assets = assets
-        self.timestamp = timestamp
+        routing_key = "{platform}.{account}".format(platform=platform, account=account)
         data = {
             "platform": platform,
             "account": account,
             "assets": assets,
             "timestamp": timestamp
         }
-        super(EventAsset, self).__init__(data)
+        super(EventAsset, self).__init__(name="EVENT_ASSET", exchange="Asset", routing_key=routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
         """
-        self.platform = self._data.get("platform")
-        self.account = self._data.get("account")
-        self.assets = self._data.get("assets")
-        self.timestamp = self._data.get("timestamp")
+        pass
 
 
 class EventOrder(Event):
     """ 委托单事件
     * NOTE:
-        订阅：订单管理器
-        发布：业务服务器
+        发布：策略服务
+        订阅：业务服务
     """
-    EXCHANGE = "order"
-    QUEUE = None
-    NAME = "ORDER"
 
     def __init__(self, platform=None, account=None, strategy=None, order_no=None, symbol=None, action=None, price=None,
                  quantity=None, status=None, order_type=None, timestamp=None):
@@ -252,6 +225,7 @@ class EventOrder(Event):
         @param order_type 订单类型
         @param timestamp 时间戳(毫秒)
         """
+        routing_key = "{platform}.{account}.{symbol}".format(platform=platform, account=account, symbol=symbol)
         data = {
             "platform": platform,
             "account": account,
@@ -265,34 +239,23 @@ class EventOrder(Event):
             "order_type": order_type,
             "timestamp": timestamp
         }
-        super(EventOrder, self).__init__(data)
+        super(EventOrder, self).__init__(name="EVENT_ORDER", exchange="Order", routing_key=routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
         """
-        self.platform = self._data.get("platform")
-        self.account = self._data.get("account")
-        self.strategy = self._data.get("strategy")
-        self.order_no = self._data.get("order_no")
-        self.symbol = self._data.get("symbol")
-        self.action = self._data.get("action")
-        self.price = self._data.get("price")
-        self.quantity = self._data.get("quantity")
-        self.status = self._data.get("status")
-        self.order_type = self._data.get("order_type")
-        self.timestamp = self._data.get("timestamp")
+        pass
 
 
 class EventKline(Event):
-    """ K线更新事件 1分钟
+    """ K线更新事件 1分钟，5分钟，15分钟
+    * NOTE:
+        发布：行情服务
+        订阅：业务服务
     """
-    EXCHANGE = "kline"
-    QUEUE = None
-    NAME = "EVENT_KLINE"
-    PRE_FETCH_COUNT = 20
 
     def __init__(self, platform=None, symbol=None, open=None, high=None, low=None, close=None, volume=None,
-                 timestamp=None):
+                 timestamp=None, kline_type=None):
         """ 初始化
         @param platform 平台
         @param symbol 交易对
@@ -302,7 +265,20 @@ class EventKline(Event):
         @param close 收盘价
         @param volume 成交量
         @param timestamp 时间戳
+        @param kline_type K线类型 kline 1分钟K线，kline_5min 5分钟K线，kline_15min 15分钟K线
         """
+        if kline_type == const.MARKET_TYPE_KLINE:
+            name = "EVENT_KLINE"
+            exchange = "Kline"
+        elif kline_type == const.MARKET_TYPE_KLINE_5M:
+            name = "EVENT_KLINE_5MIN"
+            exchange = "Kline.5min"
+        elif kline_type == const.MARKET_TYPE_KLINE_15M:
+            name = "EVENT_KLINE_15MIN"
+            exchange = "Kline.15min"
+        else:
+            logger.error("kline_type error! kline_type:", kline_type, caller=self)
+            return
         routing_key = "{platform}.{symbol}".format(platform=platform, symbol=symbol)
         data = {
             "platform": platform,
@@ -312,107 +288,17 @@ class EventKline(Event):
             "low": low,
             "close": close,
             "volume": volume,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "kline_type": kline_type
         }
-        super(EventKline, self).__init__(name="EVENT_KLINE", exchange="Kline", routing_key=routing_key, data=data)
+        super(EventKline, self).__init__(name=name, exchange=exchange, routing_key=routing_key, pre_fetch_count=20,
+                                         data=data)
 
     def parse(self):
         """ 解析self._data数据
         """
         kline = Kline(**self.data)
         return kline
-
-
-class EventKline5Min(Event):
-    """ K线更新事件 5分钟
-    """
-    EXCHANGE = "kline.5min"
-    QUEUE = None
-    NAME = "EVENT_KLINE_5MIN"
-    PRE_FETCH_COUNT = 20
-
-    def __init__(self, platform=None, symbol=None, open=None, high=None, low=None, close=None, volume=None,
-                 timestamp=None):
-        """ 初始化
-        @param platform 平台 比如: bitfinex
-        @param symbol 交易对
-        @param open 开盘价
-        @param high 最高价
-        @param low 最低价
-        @param close 收盘价
-        @param volume 成交量
-        @param timestamp 时间戳
-        """
-        routing_key = "{platform}.{symbol}".format(platform=platform, symbol=symbol)
-        self.ROUTING_KEY = routing_key
-        self.platform = platform
-        self.symbol = symbol
-        self.open = open
-        self.high = high
-        self.low = low
-        self.close = close
-        self.volume = volume
-        self.timestamp = timestamp
-        data = [platform, symbol, open, high, low, close, volume, timestamp]
-        super(EventKline5Min, self).__init__(data)
-
-    def parse(self):
-        """ 解析self._data数据
-        """
-        self.platform = self._data[0]
-        self.symbol = self._data[1]
-        self.open = self._data[2]
-        self.high = self._data[3]
-        self.low = self._data[4]
-        self.close = self._data[5]
-        self.volume = self._data[6]
-        self.timestamp = self._data[7]
-
-
-class EventKline15Min(Event):
-    """ K线更新事件 5分钟
-    """
-    EXCHANGE = "kline.15min"
-    QUEUE = None
-    NAME = "EVENT_KLINE_15MIN"
-    PRE_FETCH_COUNT = 20
-
-    def __init__(self, platform=None, symbol=None, open=None, high=None, low=None, close=None, volume=None,
-                 timestamp=None):
-        """ 初始化
-        @param platform 平台 比如: bitfinex
-        @param symbol 交易对
-        @param open 开盘价
-        @param high 最高价
-        @param low 最低价
-        @param close 收盘价
-        @param volume 成交量
-        @param timestamp 时间戳
-        """
-        routing_key = "{platform}.{symbol}".format(platform=platform, symbol=symbol)
-        self.ROUTING_KEY = routing_key
-        self.platform = platform
-        self.symbol = symbol
-        self.open = open
-        self.high = high
-        self.low = low
-        self.close = close
-        self.volume = volume
-        self.timestamp = timestamp
-        data = [platform, symbol, open, high, low, close, volume, timestamp]
-        super(EventKline15Min, self).__init__(data)
-
-    def parse(self):
-        """ 解析self._data数据
-        """
-        self.platform = self._data[0]
-        self.symbol = self._data[1]
-        self.open = self._data[2]
-        self.high = self._data[3]
-        self.low = self._data[4]
-        self.close = self._data[5]
-        self.volume = self._data[6]
-        self.timestamp = self._data[7]
 
 
 class EventOrderbook(Event):
@@ -540,10 +426,10 @@ class EventCenter:
         logger.info("Rabbitmq initialize success!", caller=self)
 
         # 创建默认的交换机
-        exchanges = ["Orderbook", "Trade", "Kline", ]
+        exchanges = ["Orderbook", "Trade", "Kline", "EVENT_CONFIG", "EVENT_HEARTBEAT", "EVENT_ASSET", "EVENT_ORDER", ]
         for name in exchanges:
             await self._channel.exchange_declare(exchange_name=name, type_name="topic")
-        logger.info("create default exchanges success!", caller=self)
+        logger.debug("create default exchanges success!", caller=self)
 
         # 如果是断线重连，那么直接绑定队列并开始消费数据，如果是首次连接，那么等待5秒再绑定消费（等待程序各个模块初始化完成）
         if reconnect:

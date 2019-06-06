@@ -94,7 +94,7 @@ class Kline:
     """
 
     def __init__(self, platform=None, symbol=None, open=None, high=None, low=None, close=None, volume=None,
-                 timestamp=None):
+                 timestamp=None, kline_type=None):
         """ 初始化
         @param platform 平台
         @param symbol 交易对
@@ -104,6 +104,7 @@ class Kline:
         @param close 收盘价
         @param volume 成交量
         @param timestamp 时间戳(毫秒)
+        @param kline_type K线类型 kline 1分钟K线，kline_5min 5分钟K线，kline_15min 15分钟K线
         """
         self.platform = platform
         self.symbol = symbol
@@ -113,6 +114,7 @@ class Kline:
         self.close = close
         self.volume = volume
         self.timestamp = timestamp
+        self.kline_type = kline_type
 
     @property
     def data(self):
@@ -124,7 +126,8 @@ class Kline:
             "low": self.low,
             "close": self.close,
             "volume": self.volume,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
+            "kline_type": self.kline_type
         }
         return d
 
