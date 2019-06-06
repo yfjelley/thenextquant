@@ -11,6 +11,7 @@ Update: 2018/09/26  1. 优化回调函数由exchange和routing_key确定；
 """
 
 import json
+import zlib
 import asyncio
 
 import aioamqp
@@ -79,13 +80,16 @@ class Event:
             "n": self.name,
             "d": self.data
         }
-        return json.dumps(d)
+        s = json.dumps(d)
+        b = zlib.compress(s.encode("utf8"))
+        return b
 
     def loads(self, b):
         """ 加载Json格式的bytes数据
         @param b bytes类型的数据
         """
-        d = json.loads(b)
+        b = zlib.decompress(b)
+        d = json.loads(b.decode("utf8"))
         self._name = d.get("n")
         self._data = d.get("d")
         return d
