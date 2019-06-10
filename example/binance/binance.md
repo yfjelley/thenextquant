@@ -65,12 +65,15 @@ class MyStrategy:
 
         # 初始化交易模块，设置订单更新回调函数 self.on_event_order_update
         cc = {
-            "account": self.access_key,
-            "access_key": self.access_key,
-            "secret_key": self.secret_key
+            "strategy": self.strategy,
+            "platform": self.platform,
+            "symbol": self.symbol,
+            "account": config.platforms.get(self.platform, {}).get("account"),
+            "access_key": config.platforms.get(self.platform, {}).get("access_key"),
+            "secret_key": config.platforms.get(self.platform, {}).get("secret_key"),
+            "order_update_callback": self.on_event_order_update
         }
-        self.trader = Trade(self.strategy, self.platform, self.symbol, self.account,
-                            order_update_callback=self.on_event_order_update, **cc)
+        self.trader = Trade(**cc)
 
         # 订阅行情，设置订单薄更新回调函数 self.on_event_orderbook_update
         Market(const.MARKET_TYPE_ORDERBOOK, const.BINANCE, self.symbol, self.on_event_orderbook_update)
@@ -174,7 +177,7 @@ if __name__ == '__main__':
 配置文件比较简单，更多的配置可以参考 [配置文件说明](../../docs/configure/README.md)。
 
 
-### 启动程序
+### 3. 启动程序
 
 以上，我们介绍了如何使用 `thenextquant` 开发自己的策略，这里是完整的 [策略代码](./main.py) 以及 [配置文件](./config.json)。
 

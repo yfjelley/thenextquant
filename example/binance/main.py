@@ -39,12 +39,15 @@ class MyStrategy:
 
         # 交易模块
         cc = {
-            "account": self.access_key,
-            "access_key": self.access_key,
-            "secret_key": self.secret_key
+            "strategy": self.strategy,
+            "platform": self.platform,
+            "symbol": self.symbol,
+            "account": config.platforms.get(self.platform, {}).get("account"),
+            "access_key": config.platforms.get(self.platform, {}).get("access_key"),
+            "secret_key": config.platforms.get(self.platform, {}).get("secret_key"),
+            "order_update_callback": self.on_event_order_update
         }
-        self.trader = Trade(self.strategy, self.platform, self.symbol, self.account,
-                            order_update_callback=self.on_event_order_update, **cc)
+        self.trader = Trade(**cc)
 
         # 订阅行情
         Market(const.MARKET_TYPE_ORDERBOOK, const.BINANCE, self.symbol, self.on_event_orderbook_update)
