@@ -10,13 +10,12 @@ Date:   2018/08/09
 """
 
 import copy
-import asyncio
 import json
 import hmac
 import hashlib
 from urllib.parse import urljoin
 
-
+from quant.error import Error
 from quant.utils import tools
 from quant.utils import logger
 from quant.position import Position
@@ -144,36 +143,56 @@ class BitmexTrade(Websocket):
     """ Bitmex 交易模块
     """
 
-    def __init__(self, account, strategy, symbol, host=None, wss=None, access_key=None, secret_key=None,
-                 order_update_callback=None, position_update_callback=None):
+    def __init__(self, **kwargs):
         """ 初始化
-        @param account 账户
-        @param strategy 策略名称
-        @param symbol 交易对（合约名称）
-        @param host HTTP请求主机地址
-        @param wss websocket连接地址
-        @param access_key ACCESS KEY
-        @param secret_key SECRET KEY
-        @param order_update_callback 订单更新回调
-        @param position_update_callback 持仓更新回调
         """
-        self._account = account
-        self._strategy = strategy
+        e = None
+        if not kwargs.get("account"):
+            e = Error("param account miss")
+        if not kwargs.get("strategy"):
+            e = Error("param strategy miss")
+        if not kwargs.get("symbol"):
+            e = Error("param symbol miss")
+        if not kwargs.get("host"):
+            kwargs["host"] = "https://www.bitmex.com"
+        if not kwargs.get("wss"):
+            kwargs["wss"] = "wss://www.bitmex.com"
+        if not kwargs.get("access_key"):
+            e = Error("param access_key miss")
+        if not kwargs.get("secret_key"):
+            e = Error("param secret_key miss")
+        if e:
+            logger.error(e, caller=self)
+            if kwargs.get("init_success_callback"):
+                SingleTask.run(kwargs["init_success_callback"], False, e)
+            return
+
+        self._account = kwargs["account"]
+        self._strategy = kwargs["strategy"]
         self._platform = BITMEX
-        self._symbol = symbol
-        self._host = host
-        self._wss = wss
-        self._access_key = access_key
-        self._secret_key = secret_key
+        self._symbol = kwargs["symbol"]
+        self._host = kwargs["host"]
+        self._wss = kwargs["wss"]
+        self._access_key = kwargs["access_key"]
+        self._secret_key = kwargs["secret_key"]
+        self._asset_update_callback = kwargs.get("asset_update_callback")
+        self._order_update_callback = kwargs.get("order_update_callback")
+        self._position_update_callback = kwargs.get("position_update_callback")
+        self._init_success_callback = kwargs.get("init_success_callback")
 
-        self._order_update_callback = order_update_callback
-        self._position_update_callback = position_update_callback
-
-        super(BitmexTrade, self).__init__(self._wss, send_hb_interval=5)
+        url = self._wss + "/realtime"
+        super(BitmexTrade, self).__init__(url, send_hb_interval=5)
         self.heartbeat_msg = "ping"
 
+        self._order_channel = "order:{symbol}".format(symbol=self._symbol)  # 订单订阅频道
+        self._position_channel = "position:{symbol}".format(symbol=self._symbol)  # 持仓订阅频道
+
+        # 标记订阅订单、持仓是否成功
+        self._subscribe_order_ok = False
+        self._subscribe_position_ok = False
+
         self._orders = {}
-        self._position = Position(self._platform, self._account, strategy, symbol)  # 仓位
+        self._position = Position(self._platform, self._account, self._strategy, self._symbol)  # 仓位
 
         # 初始化REST API对象
         self._rest_api = BitmexAPI(self._host, self._access_key, self._secret_key)
@@ -189,7 +208,7 @@ class BitmexTrade(Websocket):
         return copy.copy(self._orders)
 
     async def connected_callback(self):
-        """ 建立连接之后，订阅事件 ticker/deals
+        """ 建立连接之后，鉴权、订阅频道
         """
         # 身份验证
         expires = tools.get_cur_timestamp() + 5
@@ -199,17 +218,6 @@ class BitmexTrade(Websocket):
             "args": [self._access_key, expires, signature]
         }
         await self.ws.send_json(data)
-        logger.info("Websocket connection authorized successfully.", caller=self)
-
-        # 订阅order和position
-        ch_order = "order:{symbol}".format(symbol=self._symbol)
-        ch_position = "position:{symbol}".format(symbol=self._symbol)
-        data = {
-            "op": "subscribe",
-            "args": [ch_order, ch_position]
-        }
-        await self.ws.send_json(data)
-        logger.info("subscribe account/order/position successfully.", caller=self)
 
     @async_method_locker("process.locker")
     async def process(self, msg):
@@ -219,16 +227,45 @@ class BitmexTrade(Websocket):
             return
         logger.debug("msg:", json.dumps(msg), caller=self)
 
-        table = msg.get("table")
-        if table not in ["order", "position"]:
+        # 请求授权、订阅
+        if msg.get("request"):
+            if msg["request"]["op"] == "authKeyExpires":  # 授权
+                if msg["success"]:
+                    # 订阅order和position
+                    data = {
+                        "op": "subscribe",
+                        "args": [self._order_channel, self._position_channel]
+                    }
+                    await self.ws.send_json(data)
+                    logger.info("Websocket connection authorized successfully.", caller=self)
+                else:
+                    e = Error("Websocket connection authorized failed: {}".format(msg))
+                    logger.error(e, caller=self)
+                    if self._init_success_callback:
+                        SingleTask.run(self._init_success_callback, False, e)
+            if msg["request"]["op"] == "subscribe":  # 订阅
+                if msg["subscribe"] == self._order_channel and msg["success"]:
+                    self._subscribe_order_ok = True
+                    logger.info("subscribe order successfully.", caller=self)
+                if msg["subscribe"] == self._position_channel and msg["success"]:
+                    self._subscribe_position_ok = True
+                    logger.info("subscribe position successfully.", caller=self)
+                if self._subscribe_order_ok and self._subscribe_position_ok:
+                    if self._init_success_callback:
+                        SingleTask.run(self._init_success_callback, True, None)
             return
 
-        for data in msg["data"]:
-            if table == "order":
+        # 订单更新
+        if msg.get("table") == "order":
+            for data in msg["data"]:
                 order = self._update_order(data)
                 if order and self._order_update_callback:
                     SingleTask.run(self._order_update_callback, order)
-            elif table == "position":
+            return
+
+        # 持仓更新
+        if msg.get("table") == "position":
+            for data in msg["data"]:
                 self._update_position(data)
                 if self._position_update_callback:
                     SingleTask.run(self._position_update_callback, self.position)

@@ -14,6 +14,7 @@ import hmac
 import hashlib
 from urllib.parse import urljoin
 
+from quant.error import Error
 from quant.utils import tools
 from quant.utils import logger
 from quant.const import BINANCE
@@ -225,30 +226,45 @@ class BinanceTrade(Websocket):
     """ binance用户数据流
     """
 
-    def __init__(self, account, strategy, symbol, host=None, wss=None, access_key=None, secret_key=None,
-                 order_update_callback=None):
+    def __init__(self, **kwargs):
         """ 初始化
-        @param account 账户
-        @param strategy 策略名称
-        @param symbol 交易对（合约名称）
-        @param host HTTP请求主机地址
-        @param wss websocket连接地址
-        @param access_key ACCESS KEY
-        @param secret_key SECRET KEY
-        @param order_update_callback 订单更新回调
         """
-        self._account = account
-        self._strategy = strategy
+        e = None
+        if not kwargs.get("account"):
+            e = Error("param account miss")
+        if not kwargs.get("strategy"):
+            e = Error("param strategy miss")
+        if not kwargs.get("symbol"):
+            e = Error("param symbol miss")
+        if not kwargs.get("host"):
+            kwargs["host"] = "https://api.binance.com"
+        if not kwargs.get("wss"):
+            kwargs["wss"] = "wss://stream.binance.com:9443"
+        if not kwargs.get("access_key"):
+            e = Error("param access_key miss")
+        if not kwargs.get("secret_key"):
+            e = Error("param secret_key miss")
+        if e:
+            logger.error(e, caller=self)
+            if kwargs.get("init_success_callback"):
+                SingleTask.run(kwargs["init_success_callback"], False, e)
+            return
+
+        self._account = kwargs["account"]
+        self._strategy = kwargs["strategy"]
         self._platform = BINANCE
-        self._symbol = symbol
-        self._raw_symbol = symbol.replace("/", "")
-        self._host = host if host else "https://api.binance.com"
-        self._wss = wss if wss else "wss://stream.binance.com:9443"
-        self._access_key = access_key
-        self._secret_key = secret_key
-        self._order_update_callback = order_update_callback
+        self._symbol = kwargs["symbol"]
+        self._host = kwargs["host"]
+        self._wss = kwargs["wss"]
+        self._access_key = kwargs["access_key"]
+        self._secret_key = kwargs["secret_key"]
+        self._asset_update_callback = kwargs.get("asset_update_callback")
+        self._order_update_callback = kwargs.get("order_update_callback")
+        self._init_success_callback = kwargs.get("init_success_callback")
 
         super(BinanceTrade, self).__init__(self._wss)
+
+        self._raw_symbol = self._symbol.replace("/", "")  # 原始交易对
 
         self._listen_key = None # websocket连接鉴权使用
         self._orders = {}  # 订单
@@ -271,7 +287,10 @@ class BinanceTrade(Websocket):
         # 获取listen key
         success, error = await self._rest_api.get_listen_key()
         if error:
-            logger.error("get listen key error:", error, caller=self)
+            e = Error("get listen key failed: {}".format(error))
+            logger.error(e, caller=self)
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, False, e)
             return
         self._listen_key = success["listenKey"]
         uri = "/ws/" + self._listen_key
@@ -292,6 +311,9 @@ class BinanceTrade(Websocket):
         """
         order_infos, error = await self._rest_api.get_open_orders(self._raw_symbol)
         if error:
+            e = Error("get open orders error: {}".format(error))
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, False, e)
             return
         for order_info in order_infos:
             order_no = "{}_{}".format(order_info["orderId"], order_info["clientOrderId"])
@@ -309,7 +331,7 @@ class BinanceTrade(Websocket):
                 status = ORDER_STATUS_FAILED
             else:
                 logger.warn("unknown status:", order_info, caller=self)
-                return
+                continue
 
             info = {
                 "platform": self._platform,
@@ -330,6 +352,9 @@ class BinanceTrade(Websocket):
             self._orders[order_no] = order
             if self._order_update_callback:
                 SingleTask.run(self._order_update_callback, order)
+
+        if self._init_success_callback:
+            SingleTask.run(self._init_success_callback, True, None)
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
         """ 创建订单

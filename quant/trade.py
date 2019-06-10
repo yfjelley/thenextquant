@@ -7,58 +7,69 @@ Author: HuangTao
 Date:   2019/04/21
 """
 
+from quant.error import Error
 from quant.utils import logger
+from quant.tasks import SingleTask
 from quant.order import ORDER_TYPE_LIMIT
 from quant.const import OKEX, OKEX_FUTURE, DERIBIT, BITMEX, BINANCE, HUOBI
-from quant.platform.okex import OKExTrade
-from quant.platform.huobi import HuobiTrade
-from quant.platform.bitmex import BitmexTrade
-from quant.platform.binance import BinanceTrade
-from quant.platform.deribit import DeribitTrade
-from quant.platform.okex_future import OKExFutureTrade
 
 
 class Trade:
     """ 交易模块
     """
 
-    def __init__(self, strategy, platform, symbol, host=None, wss=None, account=None, access_key=None, secret_key=None,
-                 passphrase=None, order_update_callback=None, position_update_callback=None, **kwargs):
+    def __init__(self, strategy=None, platform=None, symbol=None, host=None, wss=None, account=None, access_key=None,
+                 secret_key=None, passphrase=None, asset_update_callback=None, order_update_callback=None,
+                 position_update_callback=None, init_success_callback=None, **kwargs):
         """ 初始化
         @param strategy 策略名称
         @param platform 交易平台
         @param symbol 交易对
-        @param order_update_callback 订单更新回调
-        @param position_update_callback 持仓更新回调
+        @param host 交易平台REST API地址
+        @param wss 交易平台websocket地址
+        @param account 交易账户
+        @param access_key 账户 ACCESS KEY
+        @param secret_key 账户 SECRET KEY
+        @param passphrase 账户交易密码(OKEx使用)
+        @param asset_update_callback 资产更新回调，async异步函数 async asset_update_callback(asset): pass
+        @param order_update_callback 订单更新回调，async异步函数 async order_update_callback(order): pass
+        @param position_update_callback 持仓更新回调，async异步函数 async position_update_callback(position): pass
+        @param init_success_callback 初始化成功回调，async异步函数 async init_success_callback(success, error): pass
         """
-        self._platform = platform
-        self._strategy = strategy
-        self._symbol = symbol
+        kwargs["strategy"] = strategy
+        kwargs["platform"] = platform
+        kwargs["symbol"] = symbol
+        kwargs["host"] = host
+        kwargs["wss"] = wss
+        kwargs["account"] = account
+        kwargs["access_key"] = access_key
+        kwargs["secret_key"] = secret_key
+        kwargs["passphrase"] = passphrase
+        kwargs["asset_update_callback"] = asset_update_callback
+        kwargs["order_update_callback"] = order_update_callback
+        kwargs["position_update_callback"] = position_update_callback
+        kwargs["init_success_callback"] = init_success_callback
 
         if platform == OKEX:
-            self._t = OKExTrade(account, strategy, symbol, host, wss, access_key, secret_key, passphrase,
-                                order_update_callback=order_update_callback)
+            from quant.platform.okex import OKExTrade as T
         elif platform == OKEX_FUTURE:
-            self._t = OKExFutureTrade(account, strategy, symbol, host, wss, access_key, secret_key, passphrase,
-                                      order_update_callback=order_update_callback,
-                                      position_update_callback=position_update_callback)
+            from quant.platform.okex_future import OKExFutureTrade as T
         elif platform == DERIBIT:
-            self._t = DeribitTrade(account, strategy, symbol, host, wss, access_key, secret_key,
-                                   order_update_callback=order_update_callback,
-                                   position_update_callback=position_update_callback)
+            from quant.platform.deribit import DeribitTrade as T
         elif platform == BITMEX:
-            self._t = BitmexTrade(account, strategy, symbol, host, wss, access_key, secret_key,
-                                  order_update_callback=order_update_callback,
-                                  position_update_callback=position_update_callback)
+            from quant.platform.bitmex import BitmexTrade as T
         elif platform == BINANCE:
-            self._t = BinanceTrade(account, strategy, symbol, host, wss, access_key, secret_key,
-                                   order_update_callback=order_update_callback)
+            from quant.platform.binance import BinanceTrade as T
         elif platform == HUOBI:
-            self._t = HuobiTrade(account, strategy, symbol, host, wss, access_key, secret_key,
-                                 order_update_callback=order_update_callback)
+            from quant.platform.huobi import HuobiTrade as T
         else:
             logger.error("platform error:", platform, caller=self)
-            exit(-1)
+            if init_success_callback:
+                e = Error("platform error")
+                SingleTask.run(init_success_callback, False, e)
+            return
+        kwargs.pop("platform")
+        self._t = T(**kwargs)
 
     @property
     def position(self):

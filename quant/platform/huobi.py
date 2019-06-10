@@ -19,6 +19,7 @@ import datetime
 from urllib import parse
 from urllib.parse import urljoin
 
+from quant.error import Error
 from quant.utils import tools
 from quant.utils import logger
 from quant.const import HUOBI
@@ -209,32 +210,47 @@ class HuobiTrade(Websocket):
     """ huobi Trade模块
     """
 
-    def __init__(self, account, strategy, symbol, host=None, wss=None, access_key=None, secret_key=None,
-                 order_update_callback=None):
+    def __init__(self, **kwargs):
         """ 初始化
-        @param account 账户
-        @param strategy 策略名称
-        @param symbol 交易对（合约名称）
-        @param host HTTP请求主机地址
-        @param wss websocket连接地址
-        @param access_key ACCESS KEY
-        @param secret_key SECRET KEY
-        @param order_update_callback 订单更新回调
         """
-        self._account = account
-        self._strategy = strategy
-        self._platform = HUOBI
-        self._symbol = symbol
-        self._host = host if host else "https://api.huobi.pro"
-        self._wss = wss if wss else "wss://api.huobi.pro/ws/v1"
-        self._access_key = access_key
-        self._secret_key = secret_key
-        self._order_update_callback = order_update_callback
+        e = None
+        if not kwargs.get("account"):
+            e = Error("param account miss")
+        if not kwargs.get("strategy"):
+            e = Error("param strategy miss")
+        if not kwargs.get("symbol"):
+            e = Error("param symbol miss")
+        if not kwargs.get("host"):
+            kwargs["host"] = "https://api.huobi.pro"
+        if not kwargs.get("wss"):
+            kwargs["wss"] = "wss://api.huobi.pro"
+        if not kwargs.get("access_key"):
+            e = Error("param access_key miss")
+        if not kwargs.get("secret_key"):
+            e = Error("param secret_key miss")
+        if e:
+            logger.error(e, caller=self)
+            if kwargs.get("init_success_callback"):
+                SingleTask.run(kwargs["init_success_callback"], False, e)
+            return
 
-        self._raw_symbol = symbol.replace("/", "").lower()  # 转换成交易所对应的交易对格式
+        self._account = kwargs["account"]
+        self._strategy = kwargs["strategy"]
+        self._platform = HUOBI
+        self._symbol = kwargs["symbol"]
+        self._host = kwargs["host"]
+        self._wss = kwargs["wss"]
+        self._access_key = kwargs["access_key"]
+        self._secret_key = kwargs["secret_key"]
+        self._asset_update_callback = kwargs.get("asset_update_callback")
+        self._order_update_callback = kwargs.get("order_update_callback")
+        self._init_success_callback = kwargs.get("init_success_callback")
+
+        self._raw_symbol = self._symbol.replace("/", "").lower()  # 转换成交易所对应的交易对格式
         self._order_channel = "orders.{}".format(self._raw_symbol)  # 订阅订单更新频道
 
-        super(HuobiTrade, self).__init__(self._wss, send_hb_interval=0)
+        url = self._wss + "/ws/v1"
+        super(HuobiTrade, self).__init__(url, send_hb_interval=0)
 
         self._orders = {}  # 订单
 
@@ -251,11 +267,6 @@ class HuobiTrade(Websocket):
         """ 建立连接之后，授权登陆，然后订阅order和position
         """
         # 身份验证
-        await self._do_auth()
-
-    async def _do_auth(self):
-        """ 连接授权
-        """
         timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
         params = {
             "AccessKeyId": self._access_key,
@@ -274,6 +285,9 @@ class HuobiTrade(Websocket):
         # 获取当前未完成订单
         success, error = await self._rest_api.get_open_orders(self._raw_symbol)
         if error:
+            e = Error("get open orders error: {}".format(error))
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, False, e)
             return
         for order_info in success:
             data = {
@@ -307,7 +321,10 @@ class HuobiTrade(Websocket):
 
         if op == "auth":  # 授权
             if msg["err-code"] != 0:
-                logger.error("do auth error! error:", msg, caller=self)
+                e = Error("Websocket connection authorized failed: {}".format(msg))
+                logger.error(e, caller=self)
+                if self._init_success_callback:
+                    SingleTask.run(self._init_success_callback, False, e)
                 return
             await self._auth_success_callback()
         elif op == "ping":  # ping
@@ -316,7 +333,16 @@ class HuobiTrade(Websocket):
                 "ts": msg["ts"]
             }
             await self.ws.send_json(params)
-            return
+        elif op == "sub":   # 订阅频道返回消息
+            if msg["topic"] != self._order_channel:
+                return
+            if msg["err-code"] != 0:
+                if self._init_success_callback:
+                    e = Error("subscribe order event error: {}".format(msg))
+                    SingleTask.run(self._init_success_callback, False, e)
+            else:
+                if self._init_success_callback:
+                    SingleTask.run(self._init_success_callback, True, None)
         elif op == "notify":  # 订单更新通知
             if msg["topic"] != self._order_channel:
                 return

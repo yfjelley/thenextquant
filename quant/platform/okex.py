@@ -16,6 +16,7 @@ import zlib
 import base64
 from urllib.parse import urljoin
 
+from quant.error import Error
 from quant.utils import tools
 from quant.utils import logger
 from quant.const import OKEX
@@ -179,36 +180,53 @@ class OKExRestAPI:
 
 
 class OKExTrade(Websocket):
-    """ OKEX Trade模块
+    """ OKEx Trade模块
     """
 
-    def __init__(self, account, strategy, symbol, host=None, wss=None, access_key=None, secret_key=None,
-                 passphrase=None, order_update_callback=None):
+    def __init__(self, **kwargs):
         """ 初始化
-        @param account 账户
-        @param strategy 策略名称
-        @param symbol 交易对（合约名称）
-        @param host HTTP请求主机地址
-        @param wss websocket连接地址
-        @param access_key ACCESS KEY
-        @param secret_key SECRET KEY
-        @param passphrase 密码
-        @param order_update_callback 订单更新回调
         """
-        self._account = account
-        self._strategy = strategy
+        e = None
+        if not kwargs.get("account"):
+            e = Error("param account miss")
+        if not kwargs.get("strategy"):
+            e = Error("param strategy miss")
+        if not kwargs.get("symbol"):
+            e = Error("param symbol miss")
+        if not kwargs.get("host"):
+            kwargs["host"] = "https://www.okex.com"
+        if not kwargs.get("wss"):
+            kwargs["wss"] = "wss://real.okex.com:10442"
+        if not kwargs.get("access_key"):
+            e = Error("param access_key miss")
+        if not kwargs.get("secret_key"):
+            e = Error("param secret_key miss")
+        if not kwargs.get("passphrase"):
+            e = Error("param passphrase miss")
+        if e:
+            logger.error(e, caller=self)
+            if kwargs.get("init_success_callback"):
+                SingleTask.run(kwargs["init_success_callback"], False, e)
+            return
+
+        self._account = kwargs["account"]
+        self._strategy = kwargs["strategy"]
         self._platform = OKEX
-        self._symbol = symbol
-        self._host = host if host else "https://www.okex.com"
-        self._wss = wss if wss else "wss://real.okex.com:10442/ws/v3"
-        self._access_key = access_key
-        self._secret_key = secret_key
-        self._passphrase = passphrase
-        self._order_update_callback = order_update_callback
+        self._symbol = kwargs["symbol"]
+        self._host = kwargs["host"]
+        self._wss = kwargs["wss"]
+        self._access_key = kwargs["access_key"]
+        self._secret_key = kwargs["secret_key"]
+        self._passphrase = kwargs["passphrase"]
+        self._asset_update_callback = kwargs.get("asset_update_callback")
+        self._order_update_callback = kwargs.get("order_update_callback")
+        self._init_success_callback = kwargs.get("init_success_callback")
 
-        self._raw_symbol = symbol.replace("/", "-")  # 转换成交易所对应的交易对格式
+        self._raw_symbol = self._symbol.replace("/", "-")  # 转换成交易所对应的交易对格式
+        self._order_channel = "spot/order:{symbol}".format(symbol=self._raw_symbol)  # 订单订阅频道
 
-        super(OKExTrade, self).__init__(self._wss, send_hb_interval=5)
+        url = self._wss + "/ws/v3"
+        super(OKExTrade, self).__init__(url, send_hb_interval=5)
         self.heartbeat_msg = "ping"
 
         self._orders = {}  # 订单
@@ -226,7 +244,7 @@ class OKExTrade(Websocket):
         """ 建立连接之后，授权登陆，然后订阅order和position
         """
         # 身份验证
-        timestamp = str(time.time()).split('.')[0] + '.' + str(time.time()).split('.')[1][:3]
+        timestamp = str(time.time()).split(".")[0] + "." + str(time.time()).split(".")[1][:3]
         message = str(timestamp) + "GET" + "/users/self/verify"
         mac = hmac.new(bytes(self._secret_key, encoding="utf8"), bytes(message, encoding="utf8"), digestmod="sha256")
         d = mac.digest()
@@ -236,17 +254,6 @@ class OKExTrade(Websocket):
             "args": [self._access_key, self._passphrase, timestamp, signature]
         }
         await self.ws.send_json(data)
-
-        # 获取当前等待成交和部分成交的订单信息
-        order_infos, error = await self._rest_api.get_open_orders(self._raw_symbol)
-        if error:
-            return
-        for order_info in order_infos:
-            order_info["ctime"] = order_info["created_at"]
-            order_info["utime"] = order_info["timestamp"]
-            order = self._update_order(order_info)
-            if self._order_update_callback:
-                SingleTask.run(self._order_update_callback, order)
 
     @async_method_locker("process_binary.locker")
     async def process_binary(self, raw):
@@ -260,31 +267,54 @@ class OKExTrade(Websocket):
         if msg == "pong":  # 心跳返回
             return
         msg = json.loads(msg)
-        logger.debug('msg:', msg, caller=self)
+        logger.debug("msg:", msg, caller=self)
 
         # 登陆成功之后再订阅数据
         if msg.get("event") == "login":
             if not msg.get("success"):
-                logger.error("websocket login error!", caller=self)
+                e = Error("Websocket connection authorized failed: {}".format(msg))
+                logger.error(e, caller=self)
+                if self._init_success_callback:
+                    SingleTask.run(self._init_success_callback, False, e)
                 return
             logger.info("Websocket connection authorized successfully.", caller=self)
 
+            # 获取当前等待成交和部分成交的订单信息
+            order_infos, error = await self._rest_api.get_open_orders(self._raw_symbol)
+            if error:
+                e = Error("get open orders error: {}".format(msg))
+                if self._init_success_callback:
+                    SingleTask.run(self._init_success_callback, False, e)
+                return
+            for order_info in order_infos:
+                order_info["ctime"] = order_info["created_at"]
+                order_info["utime"] = order_info["timestamp"]
+                order = self._update_order(order_info)
+                if self._order_update_callback:
+                    SingleTask.run(self._order_update_callback, order)
+
             # 订阅 order
-            ch_order = "spot/order:{symbol}".format(symbol=self._raw_symbol)
             data = {
                 "op": "subscribe",
-                "args": [ch_order]
+                "args": [self._order_channel]
             }
             await self.ws.send_json(data)
-            logger.info("subscribe order successfully.", caller=self)
             return
 
-        table = msg.get("table")
-        if table not in ["spot/order", ]:
+        # 订阅返回消息
+        if msg.get("event") == "subscribe":
+            if msg.get("channel") == self._order_channel:
+                if self._init_success_callback:
+                    SingleTask.run(self._init_success_callback, True, None)
+            else:
+                if self._init_success_callback:
+                    e = Error("subscribe order event error: {}".format(msg))
+                    SingleTask.run(self._init_success_callback, False, e)
             return
 
-        for data in msg["data"]:
-            if table == "spot/order":
+        # 订单更新
+        if msg.get("table") == "spot/order":
+            for data in msg["data"]:
                 data["ctime"] = data["timestamp"]
                 data["utime"] = data["last_fill_time"]
                 order = self._update_order(data)

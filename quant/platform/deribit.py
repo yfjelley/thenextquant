@@ -12,6 +12,7 @@ import json
 import copy
 import asyncio
 
+from quant.error import Error
 from quant.utils import logger
 from quant.const import DERIBIT
 from quant.position import Position
@@ -30,37 +31,49 @@ class DeribitTrade(Websocket):
     """ Deribit Trade module 交易模块
     """
 
-    def __init__(self, account, strategy, symbol, host=None, wss=None, access_key=None, secret_key=None,
-                 order_update_callback=None, position_update_callback=None):
+    def __init__(self, **kwargs):
         """ 初始化
-        @param account 账户
-        @param strategy 策略名称
-        @param symbol 交易对（合约名称）
-        @param host HTTP请求主机地址
-        @param wss websocket连接地址
-        @param access_key ACCESS KEY
-        @param secret_key SECRET KEY
-        @param order_update_callback 订单更新回调
-        @param position_update_callback 持仓更新回调
         """
-        self._account = account
-        self._strategy = strategy
+        e = None
+        if not kwargs.get("account"):
+            e = Error("param account miss")
+        if not kwargs.get("strategy"):
+            e = Error("param strategy miss")
+        if not kwargs.get("symbol"):
+            e = Error("param symbol miss")
+        if not kwargs.get("host"):
+            kwargs["host"] = "https://www.deribit.com"
+        if not kwargs.get("wss"):
+            kwargs["wss"] = "wss://deribit.com/ws/api/v2"
+        if not kwargs.get("access_key"):
+            e = Error("param access_key miss")
+        if not kwargs.get("secret_key"):
+            e = Error("param secret_key miss")
+        if e:
+            logger.error(e, caller=self)
+            if kwargs.get("init_success_callback"):
+                SingleTask.run(kwargs["init_success_callback"], False, e)
+            return
+
+        self._account = kwargs["account"]
+        self._strategy = kwargs["strategy"]
         self._platform = DERIBIT
-        self._symbol = symbol
-        self._host = host if host else "https://www.deribit.com"
-        self._wss = wss if wss else "wss://deribit.com/ws/api/v2"
-        self._access_key = access_key
-        self._secret_key = secret_key
+        self._symbol = kwargs["symbol"]
+        self._host = kwargs["host"]
+        self._wss = kwargs["wss"]
+        self._access_key = kwargs["access_key"]
+        self._secret_key = kwargs["secret_key"]
+        self._asset_update_callback = kwargs.get("asset_update_callback")
+        self._order_update_callback = kwargs.get("order_update_callback")
+        self._position_update_callback = kwargs.get("position_update_callback")
+        self._init_success_callback = kwargs.get("init_success_callback")
 
-        self._order_update_callback = order_update_callback
-        self._position_update_callback = position_update_callback
-
-        self._order_channel = "user.orders.{symbol}.raw".format(symbol=symbol)  # 订单订阅频道
+        self._order_channel = "user.orders.{symbol}.raw".format(symbol=self._symbol)  # 订单订阅频道
 
         super(DeribitTrade, self).__init__(self._wss, send_hb_interval=5)
 
         self._orders = {}  # 订单
-        self._position = Position(self._platform, self._account, strategy, symbol)  # 仓位
+        self._position = Position(self._platform, self._account, self._strategy, self._symbol)  # 仓位
 
         self._query_id = 0  # 消息序号id，用来唯一标识请求消息
         self._queries = {}  # 未完成的post请求 {"request_id": future}
@@ -86,16 +99,20 @@ class DeribitTrade(Websocket):
         """
         # 授权
         success, error = await self._do_auth()
-        if error:
+        if error or not success.get("access_token"):
+            e = Error("Websocket connection authorized failed: {}".format(error))
+            logger.error(e, caller=self)
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, False, e)
             return
-        if success.get("access_token"):
-            self._ok = True
-        else:
-            return
+        self._ok = True
 
         # 获取未完全成交的订单
         success, error = await self.get_open_orders()
         if error:
+            e = Error("get open orders error: {}".format(error))
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, False, e)
             return
         for order_info in success:
             order = self._update_order(order_info)
@@ -112,7 +129,14 @@ class DeribitTrade(Websocket):
                 self._order_channel
             ]
         }
-        await self._send_message(method, params)
+        _, error = await self._send_message(method, params)
+        if error:
+            e = Error("subscribe order error: {}".format(error))
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, False, e)
+        else:
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, True, None)
 
     async def _do_auth(self, *args, **kwargs):
         """ 鉴权
