@@ -88,7 +88,7 @@ python src/main.py config.json
 - [FAQ](docs/faq.md)
 
 
-### 有任何问题，欢迎联系我们
+### 有任何问题，欢迎联系
 
 - 微信二维码  
 ![](docs/images/wx_qrcode.png)
