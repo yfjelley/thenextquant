@@ -49,7 +49,7 @@ ProjectName
 ```
 
 - 快速体验示例
-    [Demo](example/demo/README.md)
+    [Demo](example/demo)
 
 
 - 运行
