@@ -1,6 +1,7 @@
 
 ## TheNextQuant
 异步事件驱动的量化交易/做市系统。
+![](docs/images/framework.png)
 
 
 ### 框架依赖
@@ -11,9 +12,13 @@
 - 依赖python三方包
 	- aiohttp>=3.2.1
 	- aioamqp>=0.10.0
+	- motor>=2.0.0 (可选)
 
 - RabbitMQ服务器
     - 事件发布、订阅
+
+- MongoDB数据库(可选)
+    - 数据存储
 
 
 ### 安装
