@@ -3,6 +3,7 @@
 异步事件驱动的量化交易/做市系统。
 ![](docs/images/framework.png)
 
+![](docs/images/struct.png)
 
 ### 框架依赖
 
