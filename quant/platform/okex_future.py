@@ -4,6 +4,8 @@
 OKEx Future Trade module 交易模块
 https://www.okex.me/docs/zh/
 
+注意：当前OKEx Future的Trade模块，只支持全仓模式，不支持逐仓模式；
+
 Author: HuangTao
 Date:   2019/01/19
 """
