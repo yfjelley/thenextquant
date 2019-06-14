@@ -1,6 +1,14 @@
 # Change Logs
 
 
+### v0.0.9
+
+*Date: 2019/06/14*  
+*Summary:*
+- Add Asset data callback when create Trade module
+- Add initialize status callback when create Trade module
+
+
 ### v0.0.8
 
 *Date: 2019/06/03*  
