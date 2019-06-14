@@ -22,6 +22,7 @@ from quant.config import config
 from quant.tasks import LoopRunTask, SingleTask
 from quant.utils.decorator import async_method_locker
 from quant.market import Orderbook, Trade, Kline
+from quant.asset import Asset
 
 
 __all__ = ("EventCenter", "EventConfig", "EventHeartbeat", "EventAsset", "EventOrder", "EventKline", "EventOrderbook",
@@ -189,22 +190,29 @@ class EventAsset(Event):
         订阅：业务模块
     """
 
-    def __init__(self, platform=None, account=None, assets=None, timestamp=None):
+    def __init__(self, platform=None, account=None, assets=None, timestamp=None, update=False):
         """ 初始化
+        @param platform 交易平台
+        @param account 交易账户
+        @param assets 资产信息 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+        @param timestamp 时间戳(毫秒)
+        @param update 资产是否更新 True 有更新 / False 无更新
         """
         routing_key = "{platform}.{account}".format(platform=platform, account=account)
         data = {
             "platform": platform,
             "account": account,
             "assets": assets,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "update": update
         }
         super(EventAsset, self).__init__(name="EVENT_ASSET", exchange="Asset", routing_key=routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
         """
-        pass
+        asset = Asset(**self.data)
+        return asset
 
 
 class EventOrder(Event):
@@ -505,7 +513,7 @@ class EventCenter:
             self._event_handler[key].append(callback)
         else:
             self._event_handler[key] = [callback]
-        logger.info("event handlers:", self._event_handler.keys(), caller=self)
+        logger.debug("event handlers:", self._event_handler.keys(), caller=self)
 
     async def _check_connection(self, *args, **kwargs):
         """ 检查连接是否正常，如果连接已经断开，那么立即发起连接

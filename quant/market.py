@@ -148,7 +148,7 @@ class Market:
         @param market_type 行情类型
         @param platform 交易平台
         @param symbol 交易对
-        @param callback 更新回调函数
+        @param callback 行情更新回调函数，必须是async异步函数，回调参数为行情对象，比如k线回调函数: async def on_event_kline_update(kline: Kline): pass
         """
         if market_type == const.MARKET_TYPE_ORDERBOOK:
             from quant.event import EventOrderbook

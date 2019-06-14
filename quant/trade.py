@@ -72,12 +72,16 @@ class Trade:
         self._t = T(**kwargs)
 
     @property
-    def position(self):
-        return self._t.position
+    def assets(self):
+        return self._t.assets
 
     @property
     def orders(self):
         return self._t.orders
+
+    @property
+    def position(self):
+        return self._t.position
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
         """ 创建委托单

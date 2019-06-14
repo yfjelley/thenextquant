@@ -23,6 +23,7 @@ from quant.const import OKEX
 from quant.order import Order
 from quant.tasks import SingleTask
 from quant.utils.websocket import Websocket
+from quant.asset import Asset, AssetSubscribe
 from quant.utils.decorator import async_method_locker
 from quant.utils.http_client import AsyncHttpRequests
 from quant.order import ORDER_ACTION_BUY, ORDER_ACTION_SELL
@@ -229,12 +230,21 @@ class OKExTrade(Websocket):
         super(OKExTrade, self).__init__(url, send_hb_interval=5)
         self.heartbeat_msg = "ping"
 
-        self._orders = {}  # 订单
+        self._assets = {}  # 资产 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+        self._orders = {}  # 订单 {"order_no": order, ... }
 
         # 初始化 REST API 对象
         self._rest_api = OKExRestAPI(self._host, self._access_key, self._secret_key, self._passphrase)
 
+        # 初始化资产订阅
+        if self._asset_update_callback:
+            AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
+
         self.initialize()
+
+    @property
+    def assets(self):
+        return copy.copy(self._assets)
 
     @property
     def orders(self):
@@ -435,3 +445,9 @@ class OKExTrade(Websocket):
         if status in [ORDER_STATUS_FAILED, ORDER_STATUS_CANCELED, ORDER_STATUS_FILLED]:
             self._orders.pop(order_no)
         return order
+
+    async def on_event_asset_update(self, asset: Asset):
+        """ 资产数据更新回调
+        """
+        self._assets = asset
+        SingleTask.run(self._asset_update_callback, asset)

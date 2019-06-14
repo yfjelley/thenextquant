@@ -26,6 +26,7 @@ from quant.tasks import SingleTask
 from quant.position import Position
 from quant.const import OKEX_FUTURE
 from quant.utils.websocket import Websocket
+from quant.asset import Asset, AssetSubscribe
 from quant.utils.http_client import AsyncHttpRequests
 from quant.utils.decorator import async_method_locker
 from quant.order import ORDER_ACTION_BUY, ORDER_ACTION_SELL
@@ -230,11 +231,11 @@ class OKExFutureTrade(Websocket):
         super(OKExFutureTrade, self).__init__(url, send_hb_interval=5)
         self.heartbeat_msg = "ping"
 
+        self._assets = {}  # 资产 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
         self._orders = {}  # 订单
         self._position = Position(self._platform, self._account, self._strategy, self._symbol)  # 仓位
 
         # 订阅频道
-        # ch_account = "futures/account:BTC"
         self._order_channel = "futures/order:{symbol}".format(symbol=self._symbol)
         self._position_channel = "futures/position:{symbol}".format(symbol=self._symbol)
 
@@ -245,15 +246,23 @@ class OKExFutureTrade(Websocket):
         # 初始化 REST API 对象
         self._rest_api = OKExFutureRestAPI(self._host, self._access_key, self._secret_key, self._passphrase)
 
+        # 初始化资产订阅
+        if self._asset_update_callback:
+            AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
+
         self.initialize()
 
     @property
-    def position(self):
-        return copy.copy(self._position)
+    def assets(self):
+        return copy.copy(self._assets)
 
     @property
     def orders(self):
         return copy.copy(self._orders)
+
+    @property
+    def position(self):
+        return copy.copy(self._position)
 
     async def connected_callback(self):
         """ 建立连接之后，授权登陆，然后订阅order和position
@@ -478,3 +487,9 @@ class OKExFutureTrade(Websocket):
         self._position.short_avg_price = position_info["short_avg_cost"]
         self._position.liquid_price = position_info["liquidation_price"]
         self._position.utime = tools.utctime_str_to_mts(position_info["updated_at"])
+
+    async def on_event_asset_update(self, asset: Asset):
+        """ 资产数据更新回调
+        """
+        self._assets = asset
+        SingleTask.run(self._asset_update_callback, asset)

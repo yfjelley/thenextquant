@@ -20,6 +20,7 @@ from quant.utils import logger
 from quant.const import BINANCE
 from quant.order import Order
 from quant.utils.websocket import Websocket
+from quant.asset import Asset, AssetSubscribe
 from quant.tasks import SingleTask, LoopRunTask
 from quant.utils.http_client import AsyncHttpRequests
 from quant.utils.decorator import async_method_locker
@@ -266,16 +267,25 @@ class BinanceTrade(Websocket):
 
         self._raw_symbol = self._symbol.replace("/", "")  # 原始交易对
 
-        self._listen_key = None # websocket连接鉴权使用
+        self._listen_key = None  # websocket连接鉴权使用
+        self._assets = {}  # 资产 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
         self._orders = {}  # 订单
 
         # 初始化 REST API 对象
         self._rest_api = BinanceRestAPI(self._host, self._access_key, self._secret_key)
 
+        # 初始化资产订阅
+        if self._asset_update_callback:
+            AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
+
         # 30分钟重置一下listen key
         LoopRunTask.register(self._reset_listen_key, 60 * 30)
         # 获取listen key
         SingleTask.run(self._init_websocket)
+
+    @property
+    def assets(self):
+        return copy.copy(self._assets)
 
     @property
     def orders(self):
@@ -468,3 +478,9 @@ class BinanceTrade(Websocket):
         # elif e == "outboundAccountInfo": # 账户资产更新
         #     for func in self._account_update_cb_funcs:
         #         asyncio.get_event_loop().create_task(func(msg))
+
+    async def on_event_asset_update(self, asset: Asset):
+        """ 资产数据更新回调
+        """
+        self._assets = asset
+        SingleTask.run(self._asset_update_callback, asset)

@@ -17,6 +17,7 @@ from quant.utils import logger
 from quant.const import DERIBIT
 from quant.position import Position
 from quant.utils.websocket import Websocket
+from quant.asset import Asset, AssetSubscribe
 from quant.tasks import LoopRunTask, SingleTask
 from quant.utils.decorator import async_method_locker
 from quant.order import Order
@@ -44,7 +45,7 @@ class DeribitTrade(Websocket):
         if not kwargs.get("host"):
             kwargs["host"] = "https://www.deribit.com"
         if not kwargs.get("wss"):
-            kwargs["wss"] = "wss://deribit.com/ws/api/v2"
+            kwargs["wss"] = "wss://deribit.com"
         if not kwargs.get("access_key"):
             e = Error("param access_key miss")
         if not kwargs.get("secret_key"):
@@ -70,8 +71,10 @@ class DeribitTrade(Websocket):
 
         self._order_channel = "user.orders.{symbol}.raw".format(symbol=self._symbol)  # 订单订阅频道
 
-        super(DeribitTrade, self).__init__(self._wss, send_hb_interval=5)
+        url = self._wss + "/ws/api/v2"
+        super(DeribitTrade, self).__init__(url, send_hb_interval=5)
 
+        self._assets = {}  # 资产 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
         self._orders = {}  # 订单
         self._position = Position(self._platform, self._account, self._strategy, self._symbol)  # 仓位
 
@@ -80,6 +83,10 @@ class DeribitTrade(Websocket):
 
         self.initialize()
 
+        # 初始化资产订阅
+        if self._asset_update_callback:
+            AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
+
         # 注册定时任务
         LoopRunTask.register(self._do_auth, 60 * 60)  # 每隔1小时重新授权
         LoopRunTask.register(self._check_position_update, 1)  # 获取持仓
@@ -87,12 +94,16 @@ class DeribitTrade(Websocket):
         self._ok = False  # 是否建立授权成功的websocket连接
 
     @property
-    def position(self):
-        return copy.copy(self._position)
+    def assets(self):
+        return copy.copy(self._assets)
 
     @property
     def orders(self):
         return copy.copy(self._orders)
+
+    @property
+    def position(self):
+        return copy.copy(self._position)
 
     async def connected_callback(self):
         """ 建立连接之后，授权登陆，然后订阅order和position
@@ -404,3 +415,9 @@ class DeribitTrade(Websocket):
         if order.status in [ORDER_STATUS_FILLED, ORDER_STATUS_CANCELED, ORDER_STATUS_FAILED]:
             self._orders.pop(order.order_no)
         return order
+
+    async def on_event_asset_update(self, asset: Asset):
+        """ 资产数据更新回调
+        """
+        self._assets = asset
+        SingleTask.run(self._asset_update_callback, asset)
