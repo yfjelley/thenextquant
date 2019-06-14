@@ -22,6 +22,7 @@ from quant.position import Position
 from quant.const import BITMEX
 from quant.tasks import SingleTask
 from quant.utils.websocket import Websocket
+from quant.asset import Asset, AssetSubscribe
 from quant.utils.http_client import AsyncHttpRequests
 from quant.utils.decorator import async_method_locker
 from quant.order import Order
@@ -191,21 +192,30 @@ class BitmexTrade(Websocket):
         self._subscribe_order_ok = False
         self._subscribe_position_ok = False
 
+        self._assets = {}  # 资产 {"XBT": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
         self._orders = {}
         self._position = Position(self._platform, self._account, self._strategy, self._symbol)  # 仓位
 
         # 初始化REST API对象
         self._rest_api = BitmexAPI(self._host, self._access_key, self._secret_key)
 
+        # 初始化资产订阅
+        if self._asset_update_callback:
+            AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
+
         self.initialize()
 
     @property
-    def position(self):
-        return copy.copy(self._position)
+    def assets(self):
+        return copy.copy(self._assets)
 
     @property
     def orders(self):
         return copy.copy(self._orders)
+
+    @property
+    def position(self):
+        return copy.copy(self._position)
 
     async def connected_callback(self):
         """ 建立连接之后，鉴权、订阅频道
@@ -423,3 +433,9 @@ class BitmexTrade(Websocket):
             self._position.liquid_price = position_info.get("liquidationPrice")
         if position_info.get("timestamp"):
             self._position.utime = tools.utctime_str_to_mts(position_info.get("timestamp"))
+
+    async def on_event_asset_update(self, asset: Asset):
+        """ 资产数据更新回调
+        """
+        self._assets = asset
+        SingleTask.run(self._asset_update_callback, asset)
