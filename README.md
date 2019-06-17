@@ -85,9 +85,8 @@ python src/main.py config.json
     - [日志打印](docs/others/logger.md)
     - [定时任务](docs/others/tasks.md)
 
-- 框架使用系列课程
-    - [第一期：数字货币交易框架 --- thenextquant](docs/series/第一期：数字货币交易框架%20-%20thenextquant.pdf)
-    - [第二期：TheNextQuant使用入门](docs/series/第二期：TheNextQuant使用入门.pdf)
+- [框架使用系列课程](https://github.com/TheNextQuant/Documents)
+
 
 ### Change Logs
 - [Change Logs](/docs/changelog.md)
