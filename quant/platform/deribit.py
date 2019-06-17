@@ -116,6 +116,7 @@ class DeribitTrade(Websocket):
             if self._init_success_callback:
                 SingleTask.run(self._init_success_callback, False, e)
             return
+        logger.info("Websocket connection authorized successfully.", caller=self)
         self._ok = True
 
         # 获取未完全成交的订单

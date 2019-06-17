@@ -336,6 +336,7 @@ class HuobiTrade(Websocket):
                 if self._init_success_callback:
                     SingleTask.run(self._init_success_callback, False, e)
                 return
+            logger.info("Websocket connection authorized successfully.", caller=self)
             await self._auth_success_callback()
         elif op == "ping":  # ping
             params = {

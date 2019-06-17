@@ -319,6 +319,7 @@ class BinanceTrade(Websocket):
     async def connected_callback(self):
         """ 建立连接之后，获取当前所有未完全成交的订单
         """
+        logger.info("Websocket connection authorized successfully.", caller=self)
         order_infos, error = await self._rest_api.get_open_orders(self._raw_symbol)
         if error:
             e = Error("get open orders error: {}".format(error))
