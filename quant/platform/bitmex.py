@@ -415,13 +415,13 @@ class BitmexTrade(Websocket):
         """
         current_qty = position_info.get("currentQty")
         if current_qty > 0:
-            self._position.long_quantity = int(current_qty)
+            self._position.long_quantity = abs(int(current_qty))
             self._position.short_quantity = 0
             if position_info.get("avgEntryPrice"):
                 self._position.long_avg_price = position_info.get("avgEntryPrice")
         elif current_qty < 0:
             self._position.long_quantity = 0
-            self._position.short_quantity = int(current_qty)
+            self._position.short_quantity = abs(int(current_qty))
             if position_info.get("avgEntryPrice"):
                 self._position.short_avg_price = position_info.get("avgEntryPrice")
         else:
