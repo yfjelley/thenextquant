@@ -42,9 +42,9 @@ class MyStrategy:
             "strategy": self.strategy,
             "platform": self.platform,
             "symbol": self.symbol,
-            "account": config.platforms.get(self.platform, {}).get("account"),
-            "access_key": config.platforms.get(self.platform, {}).get("access_key"),
-            "secret_key": config.platforms.get(self.platform, {}).get("secret_key"),
+            "account": self.account,
+            "access_key": self.access_key,
+            "secret_key": self.secret_key,
             "order_update_callback": self.on_event_order_update
         }
         self.trader = Trade(**cc)
