@@ -8,23 +8,24 @@
 在开发策略之前，需要先对整套系统的运行原理有一个大致的了解，以及相应的开发环境和运行环境。
 
 - Python3.x开发环境，并安装好 `thenextquant` 开发包；
-- 部署 [RabbitMQ服务器](../../docs/others/rabbitmq_deploy.md) ---- 事件中心的核心组成部分；
-- 部署 [Market（行情）服务](https://github.com/TheNextQuant/Market) ---- 订阅Binance的行情事件，如果策略不需要行情数据，那么此服务可以不用部署；
-- 注册 Binance 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`；
+- 部署 [RabbitMQ 事件中心服务](../../docs/others/rabbitmq_deploy.md) ---- 事件中心的核心组成部分；
+- 部署 [Market 行情服务](https://github.com/TheNextQuant/Market) ---- 订阅Binance的行情事件，如果策略不需要行情数据，那么此服务可以不用部署；
+- 部署 [Asset 资产服务](https://github.com/TheNextQuant/Asset) ---- 账户资产更新事件推送，如果策略不需要账户资产信息，那么此服务可以不用部署；
+- 注册 [Binance 币安](https://www.binance.com) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
 
 
 ### 2. 一个简单的策略
 
-为了在订单薄买盘提前埋伏订单，在 `BTC/USDT` 订单薄盘口距离10美金的位置挂买单，数量量为1。
-随着订单薄盘口价格不断变化，需要将价格已经偏离的订单取消，再重新挂单，使订单始终保持距离盘口价差为 `10 ± 1` 美金。
-这里设置了缓冲价差为 `1` 美金，即只要盘口价格变化在 `± 1` 内，都不必撤单之后重新挂单，这样设置的目的是尽量减少挂撤单的次数，因为交易所开放的交易接口有调用频率的限制，
+为了在订单薄买盘提前埋伏订单，在 `BTC/USDT` 订单薄盘口距离10美金的位置挂买单，数量为1。
+随着订单薄盘口价格不断变化，需要将价格已经偏离的订单取消，再重新挂单，使订单始终保持距离买盘盘口价差为 `10 ± 1` 美金。
+这里设置了缓冲价差为 `1` 美金，即只要盘口价格变化在 `± 1` 美金内，都不必撤单之后重新挂单，这样设置的目的是尽量减少挂撤单的次数，因为交易所开放的交易接口有调用频率的限制，
 如果调用太过频繁超过了限制可能会报错。
 
 
 比如： 当前订单薄价格盘口价格为 8500.5，那么我们需要在 8490.5 的位置挂一个单买，数量为1。
 如果此时订单薄价格变化为 8520.6，那么我们需要取消之前的订单，再重新在 8510.6 的位置挂一个买单，数量为1。
 
-> 这里只是演示框架的基本功能，包含挂单、撤单、查看订单状态等，不涉及具体策略以及盈亏。
+> 注意：这里只是演示框架的基本功能，包含挂单、撤单、查看订单状态等，不涉及具体策略以及盈亏。
 
 
 ##### 2.1 导入必要的模块
@@ -55,9 +56,9 @@ class MyStrategy:
         """
         self.strategy = config.strategy
         self.platform = const.BINANCE
-        self.account = config.platforms.get(self.platform, {}).get("account")
-        self.access_key = config.platforms.get(self.platform, {}).get("access_key")
-        self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")
+        self.account = config.platforms[self.platform]["account"]
+        self.access_key = config.platforms[self.platform]["access_key"]
+        self.secret_key = config.platforms[self.platform]["secret_key"]
         self.symbol = config.symbol
 
         self.order_no = None  # 创建订单的id
@@ -68,9 +69,9 @@ class MyStrategy:
             "strategy": self.strategy,
             "platform": self.platform,
             "symbol": self.symbol,
-            "account": config.platforms.get(self.platform, {}).get("account"),
-            "access_key": config.platforms.get(self.platform, {}).get("access_key"),
-            "secret_key": config.platforms.get(self.platform, {}).get("secret_key"),
+            "account": self.account,
+            "access_key": self.access_key,
+            "secret_key": self.secret_key,
             "order_update_callback": self.on_event_order_update
         }
         self.trader = Trade(**cc)
@@ -93,7 +94,7 @@ class MyStrategy:
         logger.debug("orderbook:", orderbook, caller=self)
         ask1_price = float(orderbook.asks[0][0])  # 卖一价格
         bid1_price = float(orderbook.bids[0][0])  # 买一价格
-        price = (ask1_price + bid1_price) / 2  # 为了方便，这里假设盘口价格为 卖一 和 买一 的平均值
+        price = (ask1_price + bid1_price) / 2  # 为了方便，这里假设盘口价格为 `卖一` 和 `买一` 的平均值
 
         # 判断是否需要撤单
         if self.order_no:
@@ -161,14 +162,14 @@ if __name__ == '__main__':
     main()
 ```
 
-> 我们首先判断程序运行的第一个参数是否指定了配置文件，如果没有指定配置文件，配置文件一般为 `config.json` 的json文件。其次，我们导入 `quant` 模块，
-调用 `quant.initialize(config_file)` 初始化配置，紧接着执行 `MyStrategy()` 初始化策略，最后执行 `quant.start()` 启动整个程序。
+> 我们首先判断程序运行的第一个参数是否指定了配置文件，配置文件一般为 `config.json` 的json文件，如果没有指定配置文件，那么就设置配置文件为None。
+其次，我们导入 `quant` 模块，调用 `quant.initialize(config_file)` 初始化配置，紧接着执行 `MyStrategy()` 初始化策略，最后执行 `quant.start()` 启动整个程序。
 
 
 ##### 2.3 配置文件
 
 我们在配置文件里，加入了如下配置:
-- RABBITMQ 指定事件中心服务器，此配置需要和 [Market(行情服务器)](https://github.com/TheNextQuant/Market)一致；
+- RABBITMQ 指定事件中心服务器，此配置需要和 [Market 行情服务](https://github.com/TheNextQuant/Market) 、[Asset 资产服务](https://github.com/TheNextQuant/Asset) 一致；
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
 - PLATFORMS 指定需要使用的币安账户；
 - strategy 策略的名称；
@@ -187,3 +188,17 @@ python src/main.py config.json
 ```
 
 是不是非常简单，Enjoy yourself! 
+
+
+##### 4. 参考文档
+
+- [config 服务配置](docs/configure/README.md)
+- [Market 行情](docs/market.md)
+- [Trade 交易](docs/trade.md)
+- [Asset 资产](https://github.com/TheNextQuant/Asset)
+- [EventCenter 安装RabbitMQ](docs/others/rabbitmq_deploy.md)
+- [Logger 日志打印](docs/others/logger.md)
+- [Tasks 定时任务](docs/others/tasks.md)
+
+- [框架使用系列课程](https://github.com/TheNextQuant/Documents)
+- [Python Asyncio](https://docs.python.org/3/library/asyncio.html)

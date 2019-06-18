@@ -21,13 +21,13 @@ ORDER_ACTION_SELL = "SELL"  # 卖
 # 订单状态
 ORDER_STATUS_NONE = "NONE"  # 新创建的订单，无状态
 ORDER_STATUS_SUBMITTED = "SUBMITTED"  # 已提交
-ORDER_STATUS_PARTIAL_FILLED = "PARTIAL-FILLED"  # 部分处理
-ORDER_STATUS_FILLED = "FILLED"  # 处理
+ORDER_STATUS_PARTIAL_FILLED = "PARTIAL-FILLED"  # 部分成交
+ORDER_STATUS_FILLED = "FILLED"  # 完全成交
 ORDER_STATUS_CANCELED = "CANCELED"  # 取消
-ORDER_STATUS_FAILED = "FAILED"  # 失败订单
+ORDER_STATUS_FAILED = "FAILED"  # 失败
 
 # 合约订单类型
-TRADE_TYPE_NONE = 0  # 未知订单类型，订单不是由框架创建，且某些平外的订单不能判断订单类型
+TRADE_TYPE_NONE = 0  # 未知订单类型，比如订单不是由 thenextquant 框架创建，且某些平台的订单不能判断订单类型
 TRADE_TYPE_BUY_OPEN = 1  # 买入开多 action=BUY, quantity>0
 TRADE_TYPE_SELL_OPEN = 2  # 卖出开空 action=SELL, quantity<0
 TRADE_TYPE_SELL_CLOSE = 3  # 卖出平多 action=SELL, quantity>0

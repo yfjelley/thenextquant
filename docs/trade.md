@@ -10,7 +10,7 @@
 
 #### 1.1 简单使用示例
 
-> 此处以在 `Binance` 交易所上的 `ETH/BTC` 交易对创建一个买单为例
+> 此处以在 `Binance` 交易所上的 `ETH/BTC` 交易对创建一个买单为例：
 
 ```python
 # 导入模块
@@ -18,6 +18,7 @@ from quant import const
 from quant import order
 from quant.trade import Trade
 from quant.utils import logger
+from quant.order import Order
 
 # 初始化
 platform = const.BINANCE  # 交易平台 假设是binance
@@ -28,7 +29,7 @@ symbol = "ETH/BTC"  # 交易对
 strategy_name = "my_test_strategy"  # 自定义的策略名称
 
 # 注册订单更新回调函数，注意此处注册的回调函数是 `async` 异步函数，回调参数为 `order` 对象，数据结构请查看下边的介绍。
-async def on_event_order_update(order):
+async def on_event_order_update(order: Order):
     logger.info("order:", order)
 
 # 创建trade对象
@@ -83,11 +84,12 @@ trader = Trade(strategy_name, platform, symbol, account=account, access_key=acce
 
 # 当委资产有任何变化，将通过此函数回调变化信息，asset为订单对象(注意: 因为资产可能变化频繁，所以一般10秒钟推送一次更新回调)
 async def on_event_asset_update(asset):
-    print("order update:", asset)
+    print("asset update:", asset)
 
 trader = Trade(strategy_name, platform, symbol, account=account, access_key=access_key, secret_key=secret_key,
                 asset_update_callback=on_event_asset_update)
 ```
+> 注意: 订阅资产更新数据，需要先部署 [Asset资产服务](https://github.com/TheNextQuant/Asset) 。
 
 - 如果需要实时获取到已提交委托单的实时变化情况，那么可以在初始化的时候指定订单更新回调函数
 ```python
@@ -95,7 +97,7 @@ from quant.order import Order  # 导入订单模块
 
 # 当委托单有任何变化，将通过此函数回调变化信息，order为订单对象，下文里将对 `Order` 有专题说明
 async def on_event_order_update(order: Order):
-    print("asset update:", order)
+    print("order update:", order)
 
 trader = Trade(strategy_name, platform, symbol, account=account, access_key=access_key, secret_key=secret_key,
                 asset_update_callback=on_event_asset_update, order_update_callback=on_event_order_update)
@@ -187,11 +189,29 @@ async def get_open_order_nos(self):
 `Trade.position` 可以提取当前 `Trade` 模块里的持仓信息，即 `Positin` 对象，但仅限合约使用。
 
 
-### 2. 订单模块
+### 2. 资产模块
+
+所有资产相关的数据常量和对象在框架的 `quant.asset` 模块下，`Trade` 模块在推送资产信息回调的时候，携带的 `asset` 参数即此模块。
+
+#### 2.1 资产对象
+
+```python
+from quant.asset import Asset
+
+asset = Asset(...)
+asset.platform  # 平台
+asset.account  # 账户
+asset.assets  # 资产数据
+asset.timestamp  # 资产更新时间戳(毫秒)
+asset.update  # 相对上一次推送，是否有更新，True为有更新，False为没更新
+```
+
+
+### 3. 订单模块
 
 所有订单相关的数据常量和对象在框架的 `quant.order` 模块下，`Trade` 模块在推送订单信息回调的时候，携带的 `order` 参数即此模块。
 
-#### 2.1 订单类型
+#### 3.1 订单类型
 ```python
 from quant import order
 
@@ -199,7 +219,7 @@ order.ORDER_TYPE_LIMIT  # 限价单
 order.ORDER_TYPE_MARKET  # 市价单
 ```
 
-#### 2.2 订单操作
+#### 3.2 订单操作
 ```python
 from quant import order
 
@@ -207,19 +227,31 @@ order.ORDER_ACTION_BUY  # 买入
 order.ORDER_ACTION_SELL  # 卖出
 ```
 
-#### 2.3 订单状态
+#### 3.3 订单状态
 ```python
 from quant import order
 
 order.ORDER_STATUS_NONE = "NONE"  # 新创建的订单，无状态
 order.ORDER_STATUS_SUBMITTED = "SUBMITTED"  # 已提交
-order.ORDER_STATUS_PARTIAL_FILLED = "PARTIAL-FILLED"  # 部分处理
-order.ORDER_STATUS_FILLED = "FILLED"  # 处理
+order.ORDER_STATUS_PARTIAL_FILLED = "PARTIAL-FILLED"  # 部分成交
+order.ORDER_STATUS_FILLED = "FILLED"  # 完全成交
 order.ORDER_STATUS_CANCELED = "CANCELED"  # 取消
-order.ORDER_STATUS_FAILED = "FAILED"  # 失败订单
+order.ORDER_STATUS_FAILED = "FAILED"  # 失败
 ```
 
-#### 2.4 订单对象
+#### 3.4 合约订单类型
+```python
+from quant import order
+
+order.TRADE_TYPE_NONE = 0  # 未知订单类型，比如订单不是由 thenextquant 框架创建，且某些平台的订单不能判断订单类型
+order.TRADE_TYPE_BUY_OPEN = 1  # 买入开多 action=BUY, quantity>0
+order.TRADE_TYPE_SELL_OPEN = 2  # 卖出开空 action=SELL, quantity<0
+order.TRADE_TYPE_SELL_CLOSE = 3  # 卖出平多 action=SELL, quantity>0
+order.TRADE_TYPE_BUY_CLOSE = 4  # 买入平空 action=BUY, quantity<0
+```
+> 注意： 仅限合约订单使用。
+
+#### 3.5 订单对象
 ```python
 from quant import order
 
@@ -244,25 +276,25 @@ o.utime  # 交易所订单更新时间
 ```
 
 
-### 3. 持仓模块
+### 4. 持仓模块
 
 所有持仓相关的对象在框架的 `quant.posotion` 模块下，`Trade` 模块在推送持仓信息回调的时候，携带的 `position` 参数即此模块。
 
-#### 3.1 持仓对象
+#### 4.1 持仓对象
 
 ```python
 from quant.position import Position
 
 p = Position(...)  # 初始化持仓对象
 
-p.platform = platform  # 交易平台
-p.account = account  # 交易账户
-p.strategy = strategy  # 策略名称
-p.symbol = symbol  # 交易对
-p.short_quantity = 0  # 空仓数量
-p.short_avg_price = 0  # 空仓平均价格
-p.long_quantity = 0  # 多仓数量
-p.long_avg_price = 0  # 多仓平均价格
-p.liquid_price = 0  # 预估爆仓价格
-p.utime = None  # 更新时间戳
+p.platform  # 交易平台
+p.account  # 交易账户
+p.strategy  # 策略名称
+p.symbol  # 交易对
+p.short_quantity  # 空仓数量
+p.short_avg_price  # 空仓平均价格
+p.long_quantity  # 多仓数量
+p.long_avg_price  # 多仓平均价格
+p.liquid_price  # 预估爆仓价格
+p.utime  # 更新时间戳(毫秒)
 ``` 

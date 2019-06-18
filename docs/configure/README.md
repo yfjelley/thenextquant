@@ -37,12 +37,12 @@ config.abc  # 使用配置里的abc字段
 ```
 
 **配置说明**:
-- console `boolean` 是否在命令行打印日志 `true 打印日志到命令行` / `false 打印日志到文件`
-- level `string` 日志级别 `DEBUG` / `INFO`， 默认 `DEBUG`
-- path `string` 日志路径 `默认 /var/log/servers/Quant`
-- name `string` 日志文件名 `默认 quant.log`
-- clear `boolean` 重启的时候，是否清理历史日志（true将删除整个日志保存文件夹）
-- backup_count `int` 日志保存个数（日志按天分割，默认保留5天日志, `0`为永久保存）
+- console `boolean` 是否打印到控制台，`true 打印到控制台` / `false 打印到文件`，可选，默认为 `true`
+- level `string` 日志打印级别 `DEBUG`/ `INFO`，可选，默认为 `DEBUG`
+- path `string` 日志存储路径，可选，默认为 `/var/log/servers/Quant`
+- name `string` 日志文件名，可选，默认为 `quant.log`
+- clear `boolean` 初始化的时候，是否清理之前的日志文件，`true 清理` / `false 不清理`，可选，默认为 `false`
+- backup_count `int` 保存按天分割的日志文件个数，默认0为永久保存所有日志文件，可选，默认为 `0`
 
 
 ##### 2. HEARTBEAT
@@ -60,7 +60,7 @@ config.abc  # 使用配置里的abc字段
 
 **配置说明**:
 - interval `int` 心跳打印时间间隔(秒)，0为不打印 `可选，默认为0`
-- broadcast `int` 心跳广播间隔(秒)，0为不广播 `可选，默认为0`
+- broadcast `int` 心跳广播时间间隔(秒)，0为不广播 `可选，默认为0`
 
 
 ##### 3. PROXY
@@ -77,7 +77,7 @@ HTTP代理配置。
 **配置说明**:
 - PROXY `string` http代理，解决翻墙问题
 
-> 注意: 此配置为全局配置，将作用到任何HTTP请求；
+> 注意: 此配置为全局配置，将作用到任何HTTP请求，包括Websocket；
 
 
 ##### 4. RABBITMQ

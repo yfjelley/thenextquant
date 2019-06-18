@@ -18,12 +18,12 @@
 }
 ```
 **参数说明**:
-- console `boolean` 是否打印到控制台
-- level `string` 日志打印级别 `DEBUG`/ `INFO`
-- path `string` 日志存储路径
-- name `string` 日志文件名
-- clear `boolean` 初始化的时候，是否清理之前的日志文件
-- backup_count `int` 保存按天分割的日志文件个数，默认0为永久保存所有日志文件
+- console `boolean` 是否打印到控制台，`true 打印到控制台` / `false 打印到文件`，可选，默认为 `true`
+- level `string` 日志打印级别 `DEBUG`/ `INFO`，可选，默认为 `DEBUG`
+- path `string` 日志存储路径，可选，默认为 `/var/log/servers/Quant`
+- name `string` 日志文件名，可选，默认为 `quant.log`
+- clear `boolean` 初始化的时候，是否清理之前的日志文件，`true 清理` / `false 不清理`，可选，默认为 `false`
+- backup_count `int` 保存按天分割的日志文件个数，默认0为永久保存所有日志文件，可选，默认为 `0`
 
 > 配置文件可参考 [服务配置模块](../configure/README.md);
 
