@@ -114,6 +114,9 @@ class Websocket:
     async def _send_heartbeat_msg(self, *args, **kwargs):
         """ 发送心跳给服务器
         """
+        if not self.ws:
+            logger.warn("websocket connection not connected yet!", caller=self)
+            return
         if self.heartbeat_msg:
             if isinstance(self.heartbeat_msg, dict):
                 await self.ws.send_json(self.heartbeat_msg)
