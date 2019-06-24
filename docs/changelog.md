@@ -1,6 +1,14 @@
 # Change Logs
 
 
+### v0.1.0
+
+*Date: 2019/06/24*  
+*Summary:*
+- Add [OKEx Margin](../example/okex_margin/README.md) Trade module
+- modify EventCenter's Queue name to specific different servers
+
+
 ### v0.0.9
 
 *Date: 2019/06/14*  
@@ -13,7 +21,7 @@
 
 *Date: 2019/06/03*  
 *Summary:*
-- Add [Huobi exchange](https://www.hbg.com) module
+- Add [Huobi exchange](../example/huobi/README.md) module
 
 
 ### v0.0.7
@@ -27,7 +35,7 @@
 
 *Date: 2019/05/30*  
 *Summary:*
-- Add [Binance exchange](https://www.binance.com) module
+- Add [Binance exchange](../example/binance/README.md) module
 - upgrade websocket module
 
 
