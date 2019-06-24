@@ -264,6 +264,10 @@ class OKExFutureTrade(Websocket):
     def position(self):
         return copy.copy(self._position)
 
+    @property
+    def rest_api(self):
+        return self._rest_api
+
     async def connected_callback(self):
         """ 建立连接之后，授权登陆，然后订阅order和position
         """

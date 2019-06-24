@@ -291,6 +291,10 @@ class BinanceTrade(Websocket):
     def orders(self):
         return copy.copy(self._orders)
 
+    @property
+    def rest_api(self):
+        return self._rest_api
+
     async def _init_websocket(self):
         """ 初始化websocket
         """

@@ -217,6 +217,10 @@ class BitmexTrade(Websocket):
     def position(self):
         return copy.copy(self._position)
 
+    @property
+    def rest_api(self):
+        return self._rest_api
+
     async def connected_callback(self):
         """ 建立连接之后，鉴权、订阅频道
         """
