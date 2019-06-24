@@ -146,12 +146,15 @@ class EventConfig(Event):
     def __init__(self, server_id=None, params=None):
         """ 初始化
         """
+        name = "EVENT_CONFIG"
+        exchange = "Config"
+        queue = "{server_id}.{exchange}".format(server_id=server_id, exchange=exchange)
         routing_key = "{server_id}".format(server_id=server_id)
         data = {
             "server_id": server_id,
             "params": params
         }
-        super(EventConfig, self).__init__(name="EVENT_CONFIG", exchange="Config", routing_key=routing_key, data=data)
+        super(EventConfig, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
@@ -163,7 +166,7 @@ class EventHeartbeat(Event):
     """ 服务心跳事件
     * NOTE:
         订阅：监控模块
-        发布：业务服务
+        发布：所有服务
     """
 
     def __init__(self, server_id=None, count=None):
@@ -171,11 +174,14 @@ class EventHeartbeat(Event):
         @param server_id 服务进程id
         @param count 心跳次数
         """
+        name = "EVENT_HEARTBEAT"
+        exchange = "Heartbeat"
+        queue = "{server_id}.{exchange}".format(server_id=server_id, exchange=exchange)
         data = {
             "server_id": server_id,
             "count": count
         }
-        super(EventHeartbeat, self).__init__(name="EVENT_HEARTBEAT", exchange="Heartbeat", data=data)
+        super(EventHeartbeat, self).__init__(name, exchange, queue, data=data)
 
     def parse(self):
         """ 解析self._data数据
@@ -198,7 +204,12 @@ class EventAsset(Event):
         @param timestamp 时间戳(毫秒)
         @param update 资产是否更新 True 有更新 / False 无更新
         """
+        name = "EVENT_ASSET"
+        exchange = "Asset"
         routing_key = "{platform}.{account}".format(platform=platform, account=account)
+        queue = "{server_id}.{exchange}.{routing_key}".format(server_id=config.server_id,
+                                                              exchange=exchange,
+                                                              routing_key=routing_key)
         data = {
             "platform": platform,
             "account": account,
@@ -206,7 +217,7 @@ class EventAsset(Event):
             "timestamp": timestamp,
             "update": update
         }
-        super(EventAsset, self).__init__(name="EVENT_ASSET", exchange="Asset", routing_key=routing_key, data=data)
+        super(EventAsset, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
@@ -237,7 +248,12 @@ class EventOrder(Event):
         @param order_type 订单类型
         @param timestamp 时间戳(毫秒)
         """
+        name = "EVENT_ORDER"
+        exchange = "Order"
         routing_key = "{platform}.{account}.{symbol}".format(platform=platform, account=account, symbol=symbol)
+        queue = "{server_id}.{exchange}.{routing_key}".format(server_id=config.server_id,
+                                                              exchange=exchange,
+                                                              routing_key=routing_key)
         data = {
             "platform": platform,
             "account": account,
@@ -251,7 +267,7 @@ class EventOrder(Event):
             "order_type": order_type,
             "timestamp": timestamp
         }
-        super(EventOrder, self).__init__(name="EVENT_ORDER", exchange="Order", routing_key=routing_key, data=data)
+        super(EventOrder, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
@@ -292,6 +308,9 @@ class EventKline(Event):
             logger.error("kline_type error! kline_type:", kline_type, caller=self)
             return
         routing_key = "{platform}.{symbol}".format(platform=platform, symbol=symbol)
+        queue = "{server_id}.{exchange}.{routing_key}".format(server_id=config.server_id,
+                                                              exchange=exchange,
+                                                              routing_key=routing_key)
         data = {
             "platform": platform,
             "symbol": symbol,
@@ -303,8 +322,7 @@ class EventKline(Event):
             "timestamp": timestamp,
             "kline_type": kline_type
         }
-        super(EventKline, self).__init__(name=name, exchange=exchange, routing_key=routing_key, pre_fetch_count=20,
-                                         data=data)
+        super(EventKline, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
@@ -323,7 +341,12 @@ class EventOrderbook(Event):
     def __init__(self, platform=None, symbol=None, asks=None, bids=None, timestamp=None):
         """ 初始化
         """
+        name = "EVENT_ORDERBOOK"
+        exchange = "Orderbook"
         routing_key = "{platform}.{symbol}".format(platform=platform, symbol=symbol)
+        queue = "{server_id}.{exchange}.{routing_key}".format(server_id=config.server_id,
+                                                              exchange=exchange,
+                                                              routing_key=routing_key)
         data = {
             "platform": platform,
             "symbol": symbol,
@@ -331,8 +354,7 @@ class EventOrderbook(Event):
             "bids": bids,
             "timestamp": timestamp
         }
-        super(EventOrderbook, self).__init__(name="EVENT_ORDERBOOK", exchange="Orderbook", routing_key=routing_key,
-                                             data=data)
+        super(EventOrderbook, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
@@ -351,7 +373,12 @@ class EventTrade(Event):
     def __init__(self, platform=None, symbol=None, action=None, price=None, quantity=None, timestamp=None):
         """ 初始化
         """
+        name = "EVENT_TRADE"
+        exchange = "Trade"
         routing_key = "{platform}.{symbol}".format(platform=platform, symbol=symbol)
+        queue = "{server_id}.{exchange}.{routing_key}".format(server_id=config.server_id,
+                                                              exchange=exchange,
+                                                              routing_key=routing_key)
         data = {
             "platform": platform,
             "symbol": symbol,
@@ -360,7 +387,7 @@ class EventTrade(Event):
             "quantity": quantity,
             "timestamp": timestamp
         }
-        super(EventTrade, self).__init__(name="EVENT_TRADE", exchange="Trade", routing_key=routing_key, data=data)
+        super(EventTrade, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
         """ 解析self._data数据
@@ -464,7 +491,7 @@ class EventCenter:
         @param multi 是否批量订阅消息，即routing_key为批量匹配
         """
         if event.queue:
-            await self._channel.queue_declare(queue_name=event.queue)
+            await self._channel.queue_declare(queue_name=event.queue, auto_delete=True)
             queue_name = event.queue
         else:
             result = await self._channel.queue_declare(exclusive=True)

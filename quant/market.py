@@ -10,6 +10,7 @@ Date:   2019/02/16
 import json
 
 from quant import const
+from quant.utils import logger
 
 
 class Orderbook:
@@ -158,4 +159,12 @@ class Market:
             EventTrade(platform, symbol).subscribe(callback)
         elif market_type == const.MARKET_TYPE_KLINE:
             from quant.event import EventKline
-            EventKline(platform, symbol).subscribe(callback)
+            EventKline(platform, symbol, kline_type=const.MARKET_TYPE_KLINE).subscribe(callback)
+        elif market_type == const.MARKET_TYPE_KLINE_5M:
+            from quant.event import EventKline
+            EventKline(platform, symbol, kline_type=const.MARKET_TYPE_KLINE).subscribe(callback)
+        elif market_type == const.MARKET_TYPE_KLINE_15M:
+            from quant.event import EventKline
+            EventKline(platform, symbol, kline_type=const.MARKET_TYPE_KLINE_15M).subscribe(callback)
+        else:
+            logger.error("market_type error:", market_type, caller=self)
