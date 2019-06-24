@@ -11,7 +11,7 @@ from quant.error import Error
 from quant.utils import logger
 from quant.tasks import SingleTask
 from quant.order import ORDER_TYPE_LIMIT
-from quant.const import OKEX, OKEX_FUTURE, DERIBIT, BITMEX, BINANCE, HUOBI
+from quant.const import OKEX, OKEX_MARGIN, OKEX_FUTURE, DERIBIT, BITMEX, BINANCE, HUOBI
 
 
 class Trade:
@@ -52,6 +52,8 @@ class Trade:
 
         if platform == OKEX:
             from quant.platform.okex import OKExTrade as T
+        elif platform == OKEX_MARGIN:
+            from quant.platform.okex_margin import OKExMarginTrade as T
         elif platform == OKEX_FUTURE:
             from quant.platform.okex_future import OKExFutureTrade as T
         elif platform == DERIBIT:
@@ -82,6 +84,10 @@ class Trade:
     @property
     def position(self):
         return self._t.position
+
+    @property
+    def rest_api(self):
+        return self._t.rest_api
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
         """ 创建委托单

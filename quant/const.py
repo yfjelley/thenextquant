@@ -14,6 +14,7 @@ GBX = "gbx"
 BITFINEX = "bitfinex"
 BINANCE = "binance"
 OKEX = "okex"  # OKEx现货
+OKEX_MARGIN = "okex_margin"  # OKEx杠杆
 OKEX_FUTURE = "okex_future"  # OKEx交割合约
 OKEX_SWAP = "okex_swap"  # OKEx永续合约
 BITMEX = "bitmex"
