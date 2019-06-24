@@ -75,12 +75,13 @@ python src/main.py config.json
 - [行情](docs/market.md)
 - [交易](docs/trade.md)
 - 当前支持交易所
-    - [Binance](example/binance/binance.md)
-    - [OKEx](https://www.okex.me/)
-    - [OKEx Future](https://www.okex.me/future/trade)
+    - [Binance 币安现货](example/binance/README.md)
+    - [OKEx 现货](example/okex/README.md)
+    - [OKEx Margin 杠杆](example/okex_margin/README.md)
+    - [OKEx Future 合约](https://www.okex.me/future/trade)
     - [Deribit](https://www.deribit.com/)
     - [Bitmex](https://www.bitmex.com)
-    - [Huobi](https://www.hbg.com)
+    - [Huobi 火币现货](example/huobi/README.md)
     - To be continued ...
 
 - 其它

@@ -1,7 +1,7 @@
 
-## Binance(币安)
+## OKEx 现货
 
-本文主要介绍如何通过框架SDK开发 [Binance(币安)](https://www.binance.com) 交易所的交易系统。
+本文主要介绍如何通过框架SDK开发 [OKEx 现货](https://www.okex.me/) 交易所的交易系统。
 
 ### 1. 准备条件
 
@@ -11,7 +11,7 @@
 - 部署 [RabbitMQ 事件中心服务](../../docs/others/rabbitmq_deploy.md) ---- 事件中心的核心组成部分；
 - 部署 [Market 行情服务](https://github.com/TheNextQuant/Market) ---- 订阅Binance的行情事件，如果策略不需要行情数据，那么此服务可以不用部署；
 - 部署 [Asset 资产服务](https://github.com/TheNextQuant/Asset) ---- 账户资产更新事件推送，如果策略不需要账户资产信息，那么此服务可以不用部署；
-- 注册 [Binance 币安](https://www.binance.com) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
+- 注册 [OKEx 现货](https://www.okex.me/) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
 
 
 ### 2. 一个简单的策略
@@ -55,16 +55,17 @@ class MyStrategy:
         """ 初始化
         """
         self.strategy = config.strategy
-        self.platform = const.BINANCE
-        self.account = config.platforms[self.platform]["account"]
-        self.access_key = config.platforms[self.platform]["access_key"]
-        self.secret_key = config.platforms[self.platform]["secret_key"]
+        self.platform = const.OKEX
+        self.account = config.platforms.get(self.platform, {}).get("account")
+        self.access_key = config.platforms.get(self.platform, {}).get("access_key")
+        self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")
+        self.passphrase = config.platforms.get(self.platform, {}).get("passphrase")
         self.symbol = config.symbol
 
         self.order_no = None  # 创建订单的id
         self.create_order_price = "0.0"  # 创建订单的价格
 
-        # 初始化交易模块，设置订单更新回调函数 self.on_event_order_update
+        # 交易模块
         cc = {
             "strategy": self.strategy,
             "platform": self.platform,
@@ -72,19 +73,22 @@ class MyStrategy:
             "account": self.account,
             "access_key": self.access_key,
             "secret_key": self.secret_key,
+            "passphrase": self.passphrase,
             "order_update_callback": self.on_event_order_update
         }
         self.trader = Trade(**cc)
 
-        # 订阅行情，设置订单薄更新回调函数 self.on_event_orderbook_update
-        Market(const.MARKET_TYPE_ORDERBOOK, const.BINANCE, self.symbol, self.on_event_orderbook_update)
+        # 订阅行情
+        Market(const.MARKET_TYPE_ORDERBOOK, self.platform, self.symbol, self.on_event_orderbook_update)
 ```
 
 > 在这里，我们创建了策略类 `MyStrategy`，初始化的时候设置了必要的参数、初始化交易模块、订阅相关的订单薄行情数据。
 
+> 注意：这里我们在配置文件里需要配置 `passphrase` 参数，即 OKEx 的 API KEY 的密码，同时在初始化 `Trade` 模块的时候传入此参数。
+
 - 订单薄更新回调
 
-我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从币安服务器更新
+我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从OKEx服务器更新
 并推送至此函数，我们需要根据订单薄数据的实时更新，来实时调整我们的挂单位置。
 
 ```python
@@ -171,7 +175,7 @@ if __name__ == '__main__':
 我们在配置文件里，加入了如下配置:
 - RABBITMQ 指定事件中心服务器，此配置需要和 [Market 行情服务](https://github.com/TheNextQuant/Market) 、[Asset 资产服务](https://github.com/TheNextQuant/Asset) 一致；
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
-- PLATFORMS 指定需要使用的币安账户；
+- PLATFORMS 指定需要使用的交易账户，注意名字是 `okex`，其中需要配置 `passphrase` 参数，即 OKEx 的 API KEY 的密码；
 - strategy 策略的名称；
 - symbol 策略运行的交易对；
 
@@ -190,15 +194,15 @@ python src/main.py config.json
 是不是非常简单，Enjoy yourself! 
 
 
-##### 4. 参考文档
+### 4. 参考文档
 
-- [config 服务配置](docs/configure/README.md)
-- [Market 行情](docs/market.md)
-- [Trade 交易](docs/trade.md)
+- [config 服务配置](../../docs/configure/README.md)
+- [Market 行情](../../docs/market.md)
+- [Trade 交易](../../docs/trade.md)
 - [Asset 资产](https://github.com/TheNextQuant/Asset)
-- [EventCenter 安装RabbitMQ](docs/others/rabbitmq_deploy.md)
-- [Logger 日志打印](docs/others/logger.md)
-- [Tasks 定时任务](docs/others/tasks.md)
+- [EventCenter 安装RabbitMQ](../../docs/others/rabbitmq_deploy.md)
+- [Logger 日志打印](../../docs/others/logger.md)
+- [Tasks 定时任务](../../docs/others/tasks.md)
 
-- [框架使用系列课程](https://github.com/TheNextQuant/Documents)
+- [框架使用系列教程](https://github.com/TheNextQuant/Documents)
 - [Python Asyncio](https://docs.python.org/3/library/asyncio.html)

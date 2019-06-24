@@ -7,10 +7,11 @@
     },
     "PROXY": "http://127.0.0.1:1087",
     "PLATFORMS": {
-        "huobi": {
+        "okex": {
             "account": "abc123@gmail.com",
             "access_key": "ACCESS KEY",
-            "secret_key": "SECRET KEY"
+            "secret_key": "SECRET KEY",
+            "passphrase": "bac123"
         }
     },
     "strategy": "my_test_strategy",

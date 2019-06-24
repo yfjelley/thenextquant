@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 """
-Binance 模块使用演示
+Huobi 模块使用演示
 
 为了在订单薄买盘提前埋伏订单，在 `BTC/USDT` 订单薄盘口距离10美金的位置挂买单，数量量为1。
 随着订单薄盘口价格不断变化，需要将价格已经偏离的订单取消，再重新挂单，使订单始终保持距离盘口价差为 `10 ± 1` 美金。
@@ -28,7 +28,7 @@ class MyStrategy:
         """ 初始化
         """
         self.strategy = config.strategy
-        self.platform = const.BINANCE
+        self.platform = const.HUOBI
         self.account = config.platforms.get(self.platform, {}).get("account")
         self.access_key = config.platforms.get(self.platform, {}).get("access_key")
         self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")
