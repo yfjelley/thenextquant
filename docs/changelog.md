@@ -5,7 +5,7 @@
 
 *Date: 2019/06/24*  
 *Summary:*
-- Add [OKEx Margin](../example/okex_margin/README.md) Trade module
+- Add [OKEx Margin](../example/okex_margin) Trade module
 - modify EventCenter's Queue name to specific different servers
 
 
@@ -21,7 +21,7 @@
 
 *Date: 2019/06/03*  
 *Summary:*
-- Add [Huobi exchange](../example/huobi/README.md) module
+- Add [Huobi exchange](../example/huobi) module
 
 
 ### v0.0.7
@@ -35,7 +35,7 @@
 
 *Date: 2019/05/30*  
 *Summary:*
-- Add [Binance exchange](../example/binance/README.md) module
+- Add [Binance exchange](../example/binance) module
 - upgrade websocket module
 
 
@@ -44,7 +44,7 @@
 *Date: 2019/05/29*  
 *Summary:*
 - delete Agent server
-- Add [Deribit exchange](https://www.deribit.com) module
+- Add [Deribit exchange](../example/deribit) module
 - upgrade market module
 
 

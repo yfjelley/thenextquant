@@ -1,7 +1,7 @@
 
-## Huobi(火币 现货)
+## Binance(币安)
 
-本文主要介绍如何通过框架SDK开发 [Huobi(火币 现货)](https://www.hbg.com) 交易所的交易系统。
+本文主要介绍如何通过框架SDK开发 [Binance(币安)](https://www.binance.com) 交易所的交易系统。
 
 ### 1. 准备条件
 
@@ -11,7 +11,7 @@
 - 部署 [RabbitMQ 事件中心服务](../../docs/others/rabbitmq_deploy.md) ---- 事件中心的核心组成部分；
 - 部署 [Market 行情服务](https://github.com/TheNextQuant/Market) ---- 订阅Binance的行情事件，如果策略不需要行情数据，那么此服务可以不用部署；
 - 部署 [Asset 资产服务](https://github.com/TheNextQuant/Asset) ---- 账户资产更新事件推送，如果策略不需要账户资产信息，那么此服务可以不用部署；
-- 注册 [Huobi(火币 现货)](https://www.hbg.com) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
+- 注册 [Binance 币安](https://www.binance.com) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
 
 
 ### 2. 一个简单的策略
@@ -55,7 +55,7 @@ class MyStrategy:
         """ 初始化
         """
         self.strategy = config.strategy
-        self.platform = const.HUOBI
+        self.platform = const.BINANCE
         self.account = config.platforms[self.platform]["account"]
         self.access_key = config.platforms[self.platform]["access_key"]
         self.secret_key = config.platforms[self.platform]["secret_key"]
@@ -84,7 +84,7 @@ class MyStrategy:
 
 - 订单薄更新回调
 
-我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从火币服务器更新
+我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从币安服务器更新
 并推送至此函数，我们需要根据订单薄数据的实时更新，来实时调整我们的挂单位置。
 
 ```python
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 我们在配置文件里，加入了如下配置:
 - RABBITMQ 指定事件中心服务器，此配置需要和 [Market 行情服务](https://github.com/TheNextQuant/Market) 、[Asset 资产服务](https://github.com/TheNextQuant/Asset) 一致；
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
-- PLATFORMS 指定需要使用的交易账户，注意名字是 `huobi` ；
+- PLATFORMS 指定需要使用的交易账户，注意名字是 `binance` ；
 - strategy 策略的名称；
 - symbol 策略运行的交易对；
 
@@ -198,7 +198,7 @@ python src/main.py config.json
 - [Asset 资产](https://github.com/TheNextQuant/Asset)
 - [EventCenter 安装RabbitMQ](../../docs/others/rabbitmq_deploy.md)
 - [Logger 日志打印](../../docs/others/logger.md)
-- [Tasks 定时任务](../../docs/others/tasks.md)
+- [Tasks 协程任务](../../docs/others/tasks.md)
 
 - [框架使用系列教程](https://github.com/TheNextQuant/Documents)
 - [Python Asyncio](https://docs.python.org/3/library/asyncio.html)

@@ -202,7 +202,7 @@ python src/main.py config.json
 - [Asset 资产](https://github.com/TheNextQuant/Asset)
 - [EventCenter 安装RabbitMQ](../../docs/others/rabbitmq_deploy.md)
 - [Logger 日志打印](../../docs/others/logger.md)
-- [Tasks 定时任务](../../docs/others/tasks.md)
+- [Tasks 协程任务](../../docs/others/tasks.md)
 
 - [框架使用系列教程](https://github.com/TheNextQuant/Documents)
 - [Python Asyncio](https://docs.python.org/3/library/asyncio.html)
