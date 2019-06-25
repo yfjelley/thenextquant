@@ -121,6 +121,7 @@ class MyStrategy:
         self.create_order_price = float(new_price)
         logger.info("create new order:", order_no, caller=self)
 ```
+> 这里是关于 [行情对象](../../docs/market.md) 的详细说明。
 
 - 订单更新回调
 
@@ -136,6 +137,7 @@ class MyStrategy:
         if order.status in [ORDER_STATUS_FAILED, ORDER_STATUS_CANCELED, ORDER_STATUS_FILLED]:
             self.order_no = None
 ```
+> 这里是关于 [订单对象](../../docs/trade.md) 的详细说明。 
 
 > 注意: 
 当订单的生命周期结束之后(订单失败、订单取消、订单完成)，我们需要重置订单号为空(self.order_no = None)，然后进入接下来的挂单逻辑;

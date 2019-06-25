@@ -91,8 +91,8 @@ class MyStrategy:
 
 - 订单薄更新回调
 
-我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从交易所服务器更新
-并推送至此函数，我们需要根据订单薄数据的实时价格，来创建委托单。
+我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从交易所服务器更新并推送至此函数，
+我们需要根据订单薄数据的实时价格，来创建委托单。
 
 ```python
     async def on_event_orderbook_update(self, orderbook: Orderbook):
@@ -116,6 +116,7 @@ class MyStrategy:
             self.buy_open_order_no = order_no
             logger.info("create buy open order:", order_no, caller=self)
 ```
+> 这里是关于 [行情对象](../../docs/market.md) 的详细说明。 
 
 - 订单更新回调
 
@@ -135,11 +136,12 @@ class MyStrategy:
                 logger.info("sell close completed.", caller=self)
                 exit(0)
 ```
-> 这里是关于 [订单对象](../../docs/trade.md) 的详细说明。  
-> 注意:   
-- 这里我们只判断了订单是否已完全成交(订单还包含别的状态，比如已提交、部分成交、取消、失败等)；
-- 已成交的订单，是否是开仓订单；如果是开仓订单，那么设置平仓倒计时为5分钟；
-- 已成交的订单，是否是平仓订单；如果是平仓订单，那么此策略的任务已近完成，程序退出；
+> 这里是关于 [订单对象](../../docs/trade.md) 的详细说明。   
+
+> 注意: 
+> 1. 这里我们只判断了订单是否已完全成交(订单还包含别的状态，比如已提交、部分成交、取消、失败等)；
+> 2. 已成交的订单，是否是开仓订单；如果是开仓订单，那么设置平仓倒计时为5分钟；
+> 3. 已成交的订单，是否是平仓订单；如果是平仓订单，那么此策略的任务已完成，程序退出；
 
 - 持仓更新回调
 
