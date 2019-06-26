@@ -29,6 +29,7 @@ BITSTAMP = "bitstamp"
 GEMINI = "gemini"
 FOTA = "fota"
 BIBOX = "bibox"
+COINSUPER = "coinsuper"
 
 
 # 行情类型

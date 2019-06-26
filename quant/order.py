@@ -50,7 +50,7 @@ class Order:
         self.symbol = symbol  # 交易对 如: ETH/BTC
         self.price = price  # 委托价格
         self.quantity = quantity  # 委托数量（限价单）
-        self.remain = remain  # 剩余未成交数量
+        self.remain = remain if remain else quantity  # 剩余未成交数量
         self.status = status  # 委托单状态
         self.avg_price = avg_price  # 成交均价
         self.trade_type = trade_type  # 合约订单类型 开多/开空/平多/平空

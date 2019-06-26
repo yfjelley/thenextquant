@@ -7,6 +7,7 @@ Author: HuangTao
 Date:   2018/05/03
 """
 
+import json
 import aiohttp
 from urllib.parse import urlparse
 
@@ -67,7 +68,7 @@ class AsyncHttpRequests(object):
                         caller=cls)
             result = await response.text()
         logger.debug("method:", method, "url:", url, "params:", params, "body:", body, "data:", data,
-                     "code:", code, "result:", result, caller=cls)
+                     "code:", code, "result:", json.dumps(result), caller=cls)
         return code, result, None
 
     @classmethod
