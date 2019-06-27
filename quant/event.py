@@ -465,7 +465,8 @@ class EventCenter:
         logger.info("Rabbitmq initialize success!", caller=self)
 
         # 创建默认的交换机
-        exchanges = ["Orderbook", "Trade", "Kline", "EVENT_CONFIG", "EVENT_HEARTBEAT", "EVENT_ASSET", "EVENT_ORDER", ]
+        exchanges = ["Orderbook", "Trade", "Kline", "Kline.5min", "Kline.15min", "Config", "Heartbeat", "Asset",
+                     "Order", ]
         for name in exchanges:
             await self._channel.exchange_declare(exchange_name=name, type_name="topic")
         logger.debug("create default exchanges success!", caller=self)
