@@ -8,7 +8,6 @@ Author: HuangTao
 Date:   2018/05/03
 """
 
-import json
 import copy
 import hashlib
 from urllib.parse import urljoin
@@ -267,6 +266,7 @@ class CoinsuperTrade:
         self._asset_update_callback = kwargs.get("asset_update_callback")
         self._order_update_callback = kwargs.get("order_update_callback")
         self._init_success_callback = kwargs.get("init_success_callback")
+        self._check_order_interval = kwargs.get("check_order_interval", 2)  # 检查订单状态更新时间间隔(秒)，默认2秒
 
         self._raw_symbol = self._symbol  # 原始交易对
 
@@ -276,12 +276,14 @@ class CoinsuperTrade:
         # 初始化 REST API 对象
         self._rest_api = CoinsuperRestAPI(self._host, self._access_key, self._secret_key)
 
-        # 更新订单 时间间隔2秒
-        LoopRunTask.register(self._check_order_update, 2)
+        # 循环更新订单状态
+        LoopRunTask.register(self._check_order_update, self._check_order_interval)
 
         # 初始化资产订阅
         if self._asset_update_callback:
             AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
+
+        SingleTask.run(self._initialize)
 
     @property
     def assets(self):
@@ -294,6 +296,30 @@ class CoinsuperTrade:
     @property
     def rest_api(self):
         return self._rest_api
+
+    async def _initialize(self):
+        """ 初始化
+        """
+        # 获取当前所有未完全成交的订单
+        order_nos, error = await self._rest_api.get_open_order_nos(self._raw_symbol)
+        if error:
+            e = Error("get open order nos failed: {}".format(error))
+            logger.error(e, caller=self)
+            if self._init_success_callback:
+                SingleTask.run(self._init_success_callback, False, e)
+            return
+        if order_nos:
+            success, error = await self._rest_api.get_order_list(order_nos)
+            if error:
+                e = Error("get order infos failed: {}".format(error))
+                logger.error(e, caller=self)
+                if self._init_success_callback:
+                    SingleTask.run(self._init_success_callback, False, e)
+                return
+            for order_info in success:
+                await self._update_order(order_info)
+        if self._init_success_callback:
+            SingleTask.run(self._init_success_callback, True, None)
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT, **kwargs):
         """ 创建订单
@@ -310,9 +336,10 @@ class CoinsuperTrade:
         # 创建订单
         price = tools.float_to_str(price)
         quantity = tools.float_to_str(quantity)
-        order_no, error = await self._rest_api.create_order(action, self._raw_symbol, price, quantity, order_type)
+        success, error = await self._rest_api.create_order(action, self._raw_symbol, price, quantity, order_type)
         if error:
             return None, error
+        order_no = str(success["orderNo"])
         infos = {
             "account": self._account,
             "platform": self._platform,
@@ -326,9 +353,11 @@ class CoinsuperTrade:
         }
         order = Order(**infos)
         self._orders[order_no] = order
+        if self._order_update_callback:
+            SingleTask.run(self._order_update_callback, copy.copy(order))
         return order_no, None
 
-    async def revoke_order(self, *order_nos, **kwargs):
+    async def revoke_order(self, *order_nos):
         """ 撤销订单
         @param order_nos 订单号列表，可传入任意多个，如果不传入，那么就撤销所有订单
         """
@@ -375,7 +404,6 @@ class CoinsuperTrade:
         # 获取需要查询的订单列表
         order_nos = list(self._orders.keys())
         if not order_nos:  # 暂时没有需要更新的委托单
-            logger.debug("no find any orders to be updated.", caller=self)
             return
 
         # 获取订单最新状态，每次最多请求50个订单
@@ -408,17 +436,17 @@ class CoinsuperTrade:
                 "order_no": order_no,
                 "action": order_info["action"],
                 "symbol": self._symbol,
-                "price": order_info["price"],
+                "price": order_info["priceLimit"],
                 "quantity": order_info["quantity"],
                 "remain": order_info["quantityRemaining"],
-                "avg_price": order_info["price"]
+                "avg_price": order_info["priceLimit"]
             }
             order = Order(**info)
             self._orders[order_no] = order
 
         # 已提交
         if state == "UNDEAL" or state == "PROCESSING":
-            if order.state != state:
+            if order.status != ORDER_STATUS_SUBMITTED:
                 order.status = ORDER_STATUS_SUBMITTED
                 status_updated = True
         # 订单部分成交
@@ -445,10 +473,10 @@ class CoinsuperTrade:
             logger.warn("state error! order_info:", order_info, caller=self)
             return
 
-        # 有状态更新 更新数据库订单信息
+        # 有状态更新 执行回调
         if status_updated:
+            order.ctime = order_info["utcCreate"]
             order.utime = order_info["utcUpdate"]
-            # 执行回调
             if self._order_update_callback:
                 SingleTask.run(self._order_update_callback, copy.copy(order))
 

@@ -54,8 +54,8 @@ class Order:
         self.status = status  # 委托单状态
         self.avg_price = avg_price  # 成交均价
         self.trade_type = trade_type  # 合约订单类型 开多/开空/平多/平空
-        self.ctime = ctime if ctime else tools.get_cur_timestamp()  # 创建订单时间戳
-        self.utime = utime if utime else tools.get_cur_timestamp()  # 交易所订单更新时间
+        self.ctime = ctime if ctime else tools.get_cur_timestamp_ms()  # 创建订单时间戳
+        self.utime = utime if utime else tools.get_cur_timestamp_ms()  # 交易所订单更新时间
 
     def __str__(self):
         info = "[platform: {platform}, account: {account}, strategy: {strategy}, order_no: {order_no}, " \

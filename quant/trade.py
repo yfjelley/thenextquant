@@ -91,7 +91,7 @@ class Trade:
     def rest_api(self):
         return self._t.rest_api
 
-    async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
+    async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT, **kwargs):
         """ 创建委托单
         @param action 交易方向 BUY/SELL
         @param price 委托价格
@@ -99,7 +99,7 @@ class Trade:
         @param order_type 委托类型 LIMIT/MARKET
         @return (order_no, error) 如果成功，order_no为委托单号，error为None，否则order_no为None，error为失败信息
         """
-        order_no, error = await self._t.create_order(action, price, quantity, order_type)
+        order_no, error = await self._t.create_order(action, price, quantity, order_type, **kwargs)
         return order_no, error
 
     async def revoke_order(self, *order_nos):
