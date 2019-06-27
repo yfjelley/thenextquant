@@ -27,9 +27,9 @@ class Websocket:
         @param send_hb_interval 发送心跳时间间隔，如果是0就不发送心跳消息
         """
         self._url = url
-        self._ws = None  # websocket连接对象
         self._check_conn_interval = check_conn_interval
         self._send_hb_interval = send_hb_interval
+        self.ws = None  # websocket连接对象
         self.heartbeat_msg = None  # 心跳消息
 
     def initialize(self):
