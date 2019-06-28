@@ -45,13 +45,14 @@ class HeartBeat(object):
         asyncio.get_event_loop().call_later(self._interval, self.ticker)
 
         # 执行任务回调
-        for task in self._tasks.values():
+        for task_id, task in self._tasks.items():
             interval = task["interval"]
             if self._count % interval != 0:
                 continue
             func = task["func"]
             args = task["args"]
             kwargs = task["kwargs"]
+            kwargs["task_id"] = task_id
             kwargs["heart_beat_count"] = self._count
             asyncio.get_event_loop().create_task(func(*args, **kwargs))
 
