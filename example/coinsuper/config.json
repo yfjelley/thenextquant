@@ -7,7 +7,7 @@
     },
     "PROXY": "http://127.0.0.1:1087",
     "PLATFORMS": {
-        "binance": {
+        "coinsuper": {
             "account": "abc123@gmail.com",
             "access_key": "ACCESS KEY",
             "secret_key": "SECRET KEY"

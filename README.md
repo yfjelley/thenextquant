@@ -83,6 +83,7 @@ python src/main.py config.json
     - [Deribit 合约](example/deribit)
     - [Bitmex 合约](https://www.bitmex.com)
     - [Huobi(火币) 现货](example/huobi)
+    - [Coinsuper(币成) 现货](example/coinsuper)
     - To be continued ...
 
 - 其它

@@ -1,6 +1,13 @@
 # Change Logs
 
 
+### v0.1.1
+
+*Date: 2019/06/28*  
+*Summary:*
+- Add [Coinsuper](../example/coinsuper) Trade module
+
+
 ### v0.1.0
 
 *Date: 2019/06/24*  
@@ -21,21 +28,21 @@
 
 *Date: 2019/06/03*  
 *Summary:*
-- Add [Huobi exchange](../example/huobi) module
+- Add [Huobi](../example/huobi) module
 
 
 ### v0.0.7
 
 *Date: 2019/05/31*  
 *Summary:*
-- Add [Bitmex exchange](https://www.bitmex.com) module
+- Add [Bitmex](https://www.bitmex.com) module
 
 
 ### v0.0.5
 
 *Date: 2019/05/30*  
 *Summary:*
-- Add [Binance exchange](../example/binance) module
+- Add [Binance](../example/binance) module
 - upgrade websocket module
 
 
@@ -44,7 +51,7 @@
 *Date: 2019/05/29*  
 *Summary:*
 - delete Agent server
-- Add [Deribit exchange](../example/deribit) module
+- Add [Deribit](../example/deribit) module
 - upgrade market module
 
 
