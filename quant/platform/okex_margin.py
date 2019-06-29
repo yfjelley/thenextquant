@@ -32,7 +32,7 @@ from quant.order import ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED, ORD
     ORDER_STATUS_CANCELED, ORDER_STATUS_FAILED
 
 
-__all__ = ("OKExMarginRestAPI", )
+__all__ = ("OKExMarginRestAPI", "OKExMarginTrade", )
 
 
 class OKExMarginRestAPI:

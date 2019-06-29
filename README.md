@@ -74,6 +74,7 @@ python src/main.py config.json
 - [服务配置](docs/configure/README.md)
 - [行情](docs/market.md)
 - [交易](docs/trade.md)
+- [资产](docs/asset.md)
 - 当前支持交易所
     - [Binance(币安) 现货](example/binance)
     - [OKEx 现货](example/okex)
