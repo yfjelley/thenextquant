@@ -453,17 +453,17 @@ class CoinsuperTrade:
         elif state == "PARTDEAL":
             order.status = ORDER_STATUS_PARTIAL_FILLED
             if order.order_type == ORDER_TYPE_LIMIT:
-                if float(order.qty_remain) != float(order_info["quantityRemaining"]):
+                if float(order.remain) != float(order_info["quantityRemaining"]):
                     status_updated = True
-                    order.qty_remain = float(order_info["quantityRemaining"])
+                    order.remain = float(order_info["quantityRemaining"])
             else:
-                if float(order.qty_remain) != float(order_info["amountRemaining"]):
+                if float(order.remain) != float(order_info["amountRemaining"]):
                     status_updated = True
-                    order.qty_remain = float(order_info["amountRemaining"])
+                    order.remain = float(order_info["amountRemaining"])
         # 订单成交完成
         elif state == "DEAL":
             order.status = ORDER_STATUS_FILLED
-            order.qty_remain = 0
+            order.remain = 0
             status_updated = True
         # 订单取消
         elif state == "CANCEL":
