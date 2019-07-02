@@ -76,15 +76,15 @@ python src/main.py config.json
 - [交易](docs/trade.md)
 - [资产](docs/asset.md)
 - 当前支持交易所
-    - [Binance(币安) 现货](example/binance)
-    - [OKEx 现货](example/okex)
+    - [Binance(币安) 币币](example/binance)
+    - [OKEx 币币](example/okex)
     - [OKEx Margin 杠杆](example/okex_margin)
     - [OKEx Future 交割合约](example/okex_future)
     - [OKEx Swap 永续合约](example/okex_swap)
     - [Deribit 合约](example/deribit)
     - [Bitmex 合约](example/bitmex)
-    - [Huobi(火币) 现货](example/huobi)
-    - [Coinsuper(币成) 现货](example/coinsuper)
+    - [Huobi(火币) 币币](example/huobi)
+    - [Coinsuper(币成) 币币](example/coinsuper)
     - To be continued ...
 
 - 其它

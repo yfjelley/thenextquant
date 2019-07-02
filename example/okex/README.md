@@ -1,7 +1,7 @@
 
-## OKEx 现货
+## OKEx 币币
 
-本文主要介绍如何通过框架SDK开发 [OKEx 现货](https://www.okex.me/) 交易所的交易系统。
+本文主要介绍如何通过框架SDK开发 [OKEx 币币](https://www.okex.me/) 交易所的交易系统。
 
 ### 1. 准备条件
 
@@ -11,7 +11,7 @@
 - 部署 [RabbitMQ 事件中心服务](../../docs/others/rabbitmq_deploy.md) ---- 事件中心的核心组成部分；
 - 部署 [Market 行情服务](https://github.com/TheNextQuant/Market) ---- 订阅行情事件，如果策略不需要行情数据，那么此服务可以不用部署；
 - 部署 [Asset 资产服务](https://github.com/TheNextQuant/Asset) ---- 账户资产更新事件推送，如果策略不需要账户资产信息，那么此服务可以不用部署；
-- 注册 [OKEx 现货](https://www.okex.me/) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
+- 注册 [OKEx 币币](https://www.okex.me/) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
 
 
 ### 2. 一个简单的策略
