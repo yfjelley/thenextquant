@@ -77,7 +77,7 @@ class MyStrategy:
         self.trader = Trade(**cc)
 
         # 订阅行情，设置订单薄更新回调函数 self.on_event_orderbook_update
-        Market(const.MARKET_TYPE_ORDERBOOK, const.BINANCE, self.symbol, self.on_event_orderbook_update)
+        Market(const.MARKET_TYPE_ORDERBOOK, const.platform, self.symbol, self.on_event_orderbook_update)
 ```
 
 > 在这里，我们创建了策略类 `MyStrategy`，初始化的时候设置了必要的参数、初始化交易模块、订阅相关的订单薄行情数据。
