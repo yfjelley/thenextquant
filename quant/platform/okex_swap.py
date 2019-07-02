@@ -1,13 +1,14 @@
 # -*- coding:utf-8 -*-
 
 """
-OKEx Future Trade module 交易模块
+OKEx Swap Trade module
 https://www.okex.me/docs/zh/
 
-注意：当前OKEx Future的Trade模块，只支持全仓模式，不支持逐仓模式；
+NOTE: Only Cross Margin Mode is supported in Trade module currently. Please change Margin Mode to `Cross`, not `Fixed`!
 
 Author: HuangTao
 Date:   2019/01/19
+Email:  huangtao@ifclover.com
 """
 
 import time
@@ -24,77 +25,100 @@ from quant.utils import tools
 from quant.utils import logger
 from quant.tasks import SingleTask
 from quant.position import Position
-from quant.const import OKEX_FUTURE
+from quant.const import OKEX_SWAP
 from quant.utils.websocket import Websocket
 from quant.asset import Asset, AssetSubscribe
 from quant.utils.http_client import AsyncHttpRequests
 from quant.utils.decorator import async_method_locker
-from quant.order import ORDER_ACTION_BUY, ORDER_ACTION_SELL
-from quant.order import ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET
+from quant.order import ORDER_ACTION_BUY, ORDER_ACTION_SELL, ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET
 from quant.order import ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED, ORDER_STATUS_FILLED, \
     ORDER_STATUS_CANCELED, ORDER_STATUS_FAILED
 
 
-__all__ = ("OKExFutureRestAPI", "OKExFutureTrade", )
+__all__ = ("OKExSwapRestAPI", "OKExSwapTrade", )
 
 
-class OKExFutureRestAPI:
-    """ OKEx期货交易 交割合约 REST API 封装
+class OKExSwapRestAPI:
+    """ OKEx Swap REST API client.
+
+    Attributes:
+        host: HTTP request host.
+        access_key: Account's ACCESS KEY.
+        secret_key Account's SECRET KEY.
+        passphrase API KEY Passphrase.
     """
 
     def __init__(self, host, access_key, secret_key, passphrase):
-        """ 初始化
-        @param host 请求的host
-        @param access_key 请求的access_key
-        @param secret_key 请求的secret_key
-        @param passphrase API KEY的密码
-        """
+        """initialize REST API client."""
         self._host = host
         self._access_key = access_key
         self._secret_key = secret_key
         self._passphrase = passphrase
 
     async def get_user_account(self):
-        """ 获取账户信息
+        """ Get the perpetual swap account info of all tokens. Margin ratio set as 10,000 when users have no open
+            position.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
-        success, error = await self.request("GET", "/api/futures/v3/accounts", auth=True)
+        success, error = await self.request("GET", "/api/swap/v3/accounts", auth=True)
         return success, error
 
     async def get_position(self, instrument_id):
-        """ 获取单个合约持仓信息
-        @param instrument_id 合约ID，如BTC-USD-180213
+        """ Get the information of holding positions of a contract.
+        Args:
+            instrument_id: Contract ID, e.g. BTC-USD-SWAP.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
-        uri = "/api/futures/v3/{instrument_id}/position".format(instrument_id=instrument_id)
+        uri = "/api/swap/v3/{instrument_id}/position".format(instrument_id=instrument_id)
         success, error = await self.request("GET", uri, auth=True)
         return success, error
 
-    async def create_order(self, instrument_id, trade_type, price, size, match_price=0, leverage=20):
-        """ 下单
-        @param instrument_id 合约ID，如BTC-USD-180213
-        @param trade_type 交易类型，1 开多 / 2 开空 / 3 平多 / 4 平空
-        @param price 每张合约的价格
-        @param size 买入或卖出合约的数量（以张计数）
-        @param match_price 是否以对手价下单（0 不是 / 1 是），默认为0，当取值为1时。price字段无效
-        @param leverage 要设定的杠杆倍数，10或20
+    async def create_order(self, instrument_id, trade_type, price, size, match_price=0, order_type=0):
+        """ Create an order.
+        Args:
+            instrument_id: Contract ID, e.g. BTC-USD-SWAP.
+            trade_type: 1: open long, 2: open short, 3: close long, 4: close short.
+            price: Price of each contract.
+            size: The buying or selling quantity.
+            match_price: Order at best counter party price? (0: no, 1: yes), When posting orders at best bid price,
+                            order_type can only be 0 (regular order).
+            order_type: Fill in number for parameter, 0: Normal limit order (Unfilled and 0 represent normal limit
+                            order) 1: Post only, 2: Fill Or Kill, 3: Immediately Or Cancel.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
+        uri = "/api/swap/v3/order"
         body = {
             "instrument_id": instrument_id,
             "type": str(trade_type),
             "price": price,
             "size": size,
             "match_price": match_price,
-            "leverage": leverage
+            "order_type": order_type
         }
-        success, error = await self.request("POST", "/api/futures/v3/order", body=body, auth=True)
+        success, error = await self.request("POST", uri, body=body, auth=True)
         return success, error
 
-    async def revoke_order(self, instrument_id, order_no):
-        """ 撤单
-        @param instrument_id 合约ID，如BTC-USD-180213
-        @param order_id 订单ID
+    async def revoke_order(self, instrument_id, order_id):
+        """ Cancelling an unfilled order.
+        Args:
+            instrument_id: Contract ID, e.g. BTC-USD-SWAP.
+            order_id: order ID.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
-        uri = "/api/futures/v3/cancel_order/{instrument_id}/{order_id}".format(
-            instrument_id=instrument_id, order_id=order_no)
+        uri = "/api/swap/v3/cancel_order/{instrument_id}/{order_id}".format(instrument_id=instrument_id,
+                                                                            order_id=order_id)
         success, error = await self.request("POST", uri, auth=True)
         if error:
             return None, error
@@ -103,14 +127,21 @@ class OKExFutureRestAPI:
         return success, None
 
     async def revoke_orders(self, instrument_id, order_ids):
-        """ 批量撤单
-        @param instrument_id 合约ID，如BTC-USD-180213
-        @param order_ids 订单id列表
+        """ Cancelling multiple open orders with order_id，Maximum 10 orders can be cancelled at a time for each
+            trading pair.
+
+        Args:
+            instrument_id: Contract ID, e.g. BTC-USD-SWAP.
+            order_ids: order ID list.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         assert isinstance(order_ids, list)
-        uri = "/api/futures/v3/cancel_batch_orders/{instrument_id}".format(instrument_id=instrument_id)
+        uri = "/api/swap/v3/cancel_batch_orders/{instrument_id}".format(instrument_id=instrument_id)
         body = {
-            "order_ids": order_ids
+            "ids": order_ids
         }
         success, error = await self.request("POST", uri, body=body, auth=True)
         if error:
@@ -120,48 +151,65 @@ class OKExFutureRestAPI:
         return success, None
 
     async def get_order_info(self, instrument_id, order_id):
-        """ 获取订单信息
-        @param instrument_id 合约ID，如BTC-USD-180213
-        @param order_id 订单ID
+        """ Get order details by order ID. Canceled unfilled orders will be kept in record for 2 hours only.
+
+        Args:
+            instrument_id: Contract ID, e.g. BTC-USD-SWAP.
+            order_id: order ID.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
-        uri = "/api/futures/v3/orders/{instrument_id}/{order_id}".format(
-            instrument_id=instrument_id, order_id=order_id)
+        uri = "/api/swap/v3/orders/{instrument_id}/{order_id}".format(instrument_id=instrument_id, order_id=order_id)
         success, error = await self.request("GET", uri, auth=True)
         return success, error
 
-    async def get_order_list(self, instrument_id, state):
-        """ 获取订单列表
-        @param instrument_id 合约ID，如BTC-USD-180213
-        @param state 订单状态("-2":失败,"-1":撤单成功,"0":等待成交 ,"1":部分成交, "2":完全成交,"3":下单中,"4":撤单中,"6": 未完成（等待成交+部分成交），"7":已完成（撤单成功+完全成交））
-        @param _from Request paging content for this page number.（Example: 1,2,3,4,5. From 4 we only have 4, to 4 we only have 3）
-        @param to Request page after (older) this pagination id. （Example: 1,2,3,4,5. From 4 we only have 4, to 4 we only have 3）
-        @param limit Number of results per request. Maximum 100. (default 100)
+    async def get_order_list(self, instrument_id, state, limit=100):
+        """ List your orders. This API can retrieve the latest 20000 entries of data this week.
+
+        Args:
+            instrument_id: Contract ID, e.g. BTC-USD-SWAP.
+            state: Order state for filter. ("-2": Failed, "-1": Cancelled, "0": Open , "1": Partially Filled,
+                    "2": Fully Filled, "3": Submitting, "4": Cancelling, "6": Incomplete(open + partially filled),
+                    "7": Complete(cancelled + fully filled)).
+            limit: Number of results per request. Maximum 100. (default 100)
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+
+        TODO: Add args `from` & `to`.
         """
-        uri = "/api/futures/v3/orders/{instrument_id}".format(instrument_id=instrument_id)
+        uri = "/api/swap/v3/orders/{instrument_id}".format(instrument_id=instrument_id)
         params = {
             "state": state,
-            # "from": _from,
-            # "to": to,
-            # "limit": limit
+            "limit": limit
         }
         success, error = await self.request("GET", uri, params=params, auth=True)
         return success, error
 
     async def request(self, method, uri, params=None, body=None, headers=None, auth=False):
-        """ 发起请求
-        @param method 请求方法 GET / POST / DELETE / PUT
-        @param uri 请求uri
-        @param params dict 请求query参数
-        @param body dict 请求body数据
-        @param headers 请求http头
-        @param auth boolean 是否需要加入权限校验
+        """ Do HTTP request.
+
+        Args:
+            method: HTTP request method. GET, POST, DELETE, PUT.
+            uri: HTTP request uri.
+            params: HTTP query params.
+            body:   HTTP request body.
+            headers: HTTP request headers.
+            auth: If this request requires authentication.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         if params:
             query = "&".join(["{}={}".format(k, params[k]) for k in sorted(params.keys())])
             uri += "?" + query
         url = urljoin(self._host, uri)
 
-        # 增加签名
+        # Add signature for authentication.
         if auth:
             timestamp = str(time.time()).split(".")[0] + "." + str(time.time()).split(".")[1][:3]
             if body:
@@ -183,11 +231,28 @@ class OKExFutureRestAPI:
             headers["OK-ACCESS-PASSPHRASE"] = self._passphrase
 
         _, success, error = await AsyncHttpRequests.fetch(method, url, body=body, headers=headers, timeout=10)
-        return success, error
+        if error:
+            return None, error
+        if not isinstance(success, dict):  # If response data is not dict format, convert it to json format.
+            success = json.loads(success)
+        return success, None
 
 
-class OKExFutureTrade(Websocket):
-    """ OKEX Future Trade module
+class OKExSwapTrade(Websocket):
+    """ OKEx Swap Trade module. You can initialize trade object with some attributes in kwargs.
+
+    Attributes:
+        account: Account name for this trade exchange.
+        strategy: What's name would you want to created for you strategy.
+        symbol: Symbol name for your trade.
+        host: HTTP request host. (default "https://www.okex.com")
+        wss: Websocket address. (default "wss://real.okex.com:10442")
+        access_key: Account's ACCESS KEY.
+        secret_key Account's SECRET KEY.
+        passphrase API KEY Passphrase.
+        init_success_callback: You can use this param to specific a async callback function when you initializing Trade
+            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error): pass`
+            and this callback function will be executed asynchronous after Trade module object initialized successfully.
     """
 
     def __init__(self, **kwargs):
@@ -218,7 +283,7 @@ class OKExFutureTrade(Websocket):
 
         self._account = kwargs["account"]
         self._strategy = kwargs["strategy"]
-        self._platform = OKEX_FUTURE
+        self._platform = OKEX_SWAP
         self._symbol = kwargs["symbol"]
         self._host = kwargs["host"]
         self._wss = kwargs["wss"]
@@ -231,25 +296,25 @@ class OKExFutureTrade(Websocket):
         self._init_success_callback = kwargs.get("init_success_callback")
 
         url = self._wss + "/ws/v3"
-        super(OKExFutureTrade, self).__init__(url, send_hb_interval=5)
+        super(OKExSwapTrade, self).__init__(url, send_hb_interval=5)
         self.heartbeat_msg = "ping"
 
-        self._assets = {}  # 资产 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-        self._orders = {}  # 订单
+        self._assets = {}  # Asset object. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+        self._orders = {}  # Order objects. e.g. {"order_no": Order, ... }
         self._position = Position(self._platform, self._account, self._strategy, self._symbol)  # 仓位
 
-        # 订阅频道
-        self._order_channel = "futures/order:{symbol}".format(symbol=self._symbol)
-        self._position_channel = "futures/position:{symbol}".format(symbol=self._symbol)
+        # Subscribing our channels.
+        self._order_channel = "swap/order:{symbol}".format(symbol=self._symbol)
+        self._position_channel = "swap/position:{symbol}".format(symbol=self._symbol)
 
-        # 标记订阅订单、持仓是否成功
+        # If our channels that subscribed successfully.
         self._subscribe_order_ok = False
         self._subscribe_position_ok = False
 
-        # 初始化 REST API 对象
-        self._rest_api = OKExFutureRestAPI(self._host, self._access_key, self._secret_key, self._passphrase)
+        # Initializing our REST API client.
+        self._rest_api = OKExSwapRestAPI(self._host, self._access_key, self._secret_key, self._passphrase)
 
-        # 初始化资产订阅
+        # Subscribing our asset event.
         if self._asset_update_callback:
             AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
 
@@ -272,9 +337,8 @@ class OKExFutureTrade(Websocket):
         return self._rest_api
 
     async def connected_callback(self):
-        """ 建立连接之后，授权登陆，然后订阅order和position
+        """ After websocket connection created successfully, we will send a message to server for authentication.
         """
-        # 身份验证
         timestamp = str(time.time()).split(".")[0] + "." + str(time.time()).split(".")[1][:3]
         message = str(timestamp) + "GET" + "/users/self/verify"
         mac = hmac.new(bytes(self._secret_key, encoding="utf8"), bytes(message, encoding="utf8"), digestmod="sha256")
@@ -288,19 +352,27 @@ class OKExFutureTrade(Websocket):
 
     @async_method_locker("process_binary.locker")
     async def process_binary(self, raw):
-        """ 处理websocket上接收到的消息
-        @param raw 原始的压缩数据
+        """ Process binary message that receive from websocket.
+
+        Args:
+            raw Binary message receive from websocket.
+
+        Returns:
+            None.
         """
         decompress = zlib.decompressobj(-zlib.MAX_WBITS)
         msg = decompress.decompress(raw)
         msg += decompress.flush()
         msg = msg.decode()
-        if msg == "pong":  # 心跳返回
-            return
-        msg = json.loads(msg)
-        logger.debug("msg:", msg, caller=self)
 
-        # 登陆成功之后再订阅数据
+        # Heartbeat message received.
+        if msg == "pong":
+            return
+
+        logger.debug("msg:", msg, caller=self)
+        msg = json.loads(msg)
+
+        # Authorization message received.
         if msg.get("event") == "login":
             if not msg.get("success"):
                 e = Error("Websocket connection authorized failed: {}".format(msg))
@@ -310,7 +382,7 @@ class OKExFutureTrade(Websocket):
                 return
             logger.info("Websocket connection authorized successfully.", caller=self)
 
-            # 获取当前等待成交和部分成交的订单信息
+            # Fetch orders from server. (open + partially filled)
             result, error = await self._rest_api.get_order_list(self._symbol, 6)
             if error:
                 e = Error("get open orders error: {}".format(error))
@@ -322,19 +394,18 @@ class OKExFutureTrade(Websocket):
                 if self._order_update_callback:
                     SingleTask.run(self._order_update_callback, order)
 
-            # 获取当前持仓
+            # Fetch positions from server.
             position, error = await self._rest_api.get_position(self._symbol)
             if error:
                 e = Error("get position error: {}".format(error))
                 if self._init_success_callback:
                     SingleTask.run(self._init_success_callback, False, e)
                 return
-            if len(position["holding"]) > 0:
-                self._update_position(position["holding"][0])
+            self._update_position(position)
             if self._position_update_callback:
                 SingleTask.run(self._position_update_callback, self.position)
 
-            # 订阅account, order, position
+            # Subscribe order channel and position channel.
             data = {
                 "op": "subscribe",
                 "args": [self._order_channel, self._position_channel]
@@ -342,7 +413,7 @@ class OKExFutureTrade(Websocket):
             await self.ws.send_json(data)
             return
 
-        # 订阅返回消息
+        # Subscribe response message received.
         if msg.get("event") == "subscribe":
             if msg.get("channel") == self._order_channel:
                 self._subscribe_order_ok = True
@@ -353,27 +424,37 @@ class OKExFutureTrade(Websocket):
                     SingleTask.run(self._init_success_callback, True, None)
             return
 
-        # 订单更新
-        if msg.get("table") == "futures/order":
+        # Order update message received.
+        if msg.get("table") == "swap/order":
             for data in msg["data"]:
                 order = self._update_order(data)
                 if order and self._order_update_callback:
                     SingleTask.run(self._order_update_callback, order)
             return
 
-        # 持仓更新
-        if msg.get("table") == "futures/position":
+        # Position update message receive.
+        if msg.get("table") == "swap/position":
             for data in msg["data"]:
                 self._update_position(data)
                 if self._position_update_callback:
                     SingleTask.run(self._position_update_callback, self.position)
 
-    async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
-        """ 创建订单
-        @param action 交易方向 BUY/SELL
-        @param price 委托价格
-        @param quantity 委托数量(可以是正数，也可以是复数)
-        @param order_type 委托类型 limit/market
+    async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT, match_price=0, **kwargs):
+        """ Create an order.
+
+        Args:
+            action: Trade direction, BUY or SELL.
+            price: Price of each contract.
+            quantity: The buying or selling quantity.
+            order_type:
+            match_price: Order at best counter party price? (0: no, 1: yes), When posting orders at best bid price,
+                            order_type can only be 0 (regular order).
+            order_type: Fill in number for parameter, 0: Normal limit order (Unfilled and 0 represent normal limit
+                            order) 1: Post only, 2: Fill Or Kill, 3: Immediately Or Cancel.
+
+        Returns:
+            order_no: Order ID if created successfully, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         if int(quantity) > 0:
             if action == ORDER_ACTION_BUY:
@@ -386,17 +467,31 @@ class OKExFutureTrade(Websocket):
             else:
                 trade_type = "2"
         quantity = abs(int(quantity))
-        result, error = await self._rest_api.create_order(self._symbol, trade_type, price, quantity)
+        if order_type == ORDER_TYPE_LIMIT:
+            order_type_2 = 0
+        elif order_type == ORDER_TYPE_MARKET:
+            order_type_2 = 2
+        else:
+            return None, "order type error"
+        result, error = await self._rest_api.create_order(self._symbol, trade_type, price, quantity, match_price,
+                                                          order_type_2)
         if error:
             return None, error
-        return result["order_id"], None
+        order_no = result["order_id"]
+        return order_no, None
 
     async def revoke_order(self, *order_nos):
-        """ 撤销订单
-        @param order_nos 订单号，可传入任意多个，如果不传入，那么就撤销所有订单
-        * NOTE: 单次调用最多只能撤销100个订单，如果订单超过100个，请多次调用
+        """ Revoke (an) order(s).
+
+        Args:
+            order_nos: Order id list, you can set this param to 0 or multiple items. If you set 0 param, you can cancel
+                all orders for this symbol(initialized in Trade object). If you set 1 param, you can cancel an order.
+                If you set multiple param, you can cancel multiple orders. Do not set param length more than 100.
+
+        Returns:
+            Success or error, see bellow.
         """
-        # 如果传入order_nos为空，即撤销全部委托单
+        # If len(order_nos) == 0, you will cancel all orders for this symbol(initialized in Trade object).
         if len(order_nos) == 0:
             result, error = await self._rest_api.get_order_list(self._symbol, 6)
             if error:
@@ -408,7 +503,7 @@ class OKExFutureTrade(Websocket):
                     return False, error
             return True, None
 
-        # 如果传入order_nos为一个委托单号，那么只撤销一个委托单
+        # If len(order_nos) == 1, you will cancel an order.
         if len(order_nos) == 1:
             success, error = await self._rest_api.revoke_order(self._symbol, order_nos[0])
             if error:
@@ -416,7 +511,7 @@ class OKExFutureTrade(Websocket):
             else:
                 return order_nos[0], None
 
-        # 如果传入order_nos数量大于1，那么就批量撤销传入的委托单
+        # If len(order_nos) > 1, you will cancel multiple orders.
         if len(order_nos) > 1:
             success, error = [], []
             for order_no in order_nos:
@@ -428,7 +523,14 @@ class OKExFutureTrade(Websocket):
             return success, error
 
     async def get_open_order_nos(self):
-        """ 获取未完全成交订单号列表
+        """ Get open order id list.
+
+        Args:
+            None.
+
+        Returns:
+            order_nos: Open order id list, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         success, error = await self._rest_api.get_order_list(self._symbol, 6)
         if error:
@@ -440,8 +542,13 @@ class OKExFutureTrade(Websocket):
             return order_nos, None
 
     def _update_order(self, order_info):
-        """ 更新订单信息
-        @param order_info 订单信息
+        """ Order update.
+
+        Args:
+            order_info: Order information.
+
+        Returns:
+            Return order object if or None.
         """
         order_no = str(order_info["order_id"])
         state = order_info["state"]
@@ -485,18 +592,37 @@ class OKExFutureTrade(Websocket):
         return order
 
     def _update_position(self, position_info):
-        """ 更新持仓信息
-        @param position_info 持仓信息
+        """ Position update.
+
+        Args:
+            position_info: Position information.
+
+        Returns:
+            None.
         """
-        self._position.long_quantity = int(position_info["long_qty"])
-        self._position.long_avg_price = position_info["long_avg_cost"]
-        self._position.short_quantity = int(position_info["short_qty"])
-        self._position.short_avg_price = position_info["short_avg_cost"]
-        self._position.liquid_price = position_info["liquidation_price"]
-        self._position.utime = tools.utctime_str_to_mts(position_info["updated_at"])
+        if len(position_info["holding"]) == 0:  # When the length of `holding` is 0, specific all the position is closed
+            self._position.update(0, 0, 0, 0, 0)
+            return
+        for item in position_info["holding"]:
+            if item["side"] == "long":
+                self._position.liquid_price = item["liquidation_price"]
+                self._position.long_quantity = int(item["position"])
+                self._position.long_avg_price = item["avg_cost"]
+            elif item["side"] == "short":
+                self._position.short_quantity = int(item["position"])
+                self._position.short_avg_price = item["avg_cost"]
+            else:
+                continue
+            self._position.utime = tools.utctime_str_to_mts(item["timestamp"])
 
     async def on_event_asset_update(self, asset: Asset):
-        """ 资产数据更新回调
+        """ Asset event data callback.
+
+        Args:
+            asset: Asset object callback from EventCenter.
+
+        Returns:
+            None.
         """
         self._assets = asset
         SingleTask.run(self._asset_update_callback, asset)

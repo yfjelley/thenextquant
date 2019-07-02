@@ -1,38 +1,34 @@
 # -*- coding:utf-8 -*-
 
 """
-常量
+some constants
 
 Author: HuangTao
 Date:   2018/07/31
+Email:  huangtao@ifclover.com
 """
 
 
-# 交易所名称
-BCOIN = "bcoin"
-GBX = "gbx"
+# Exchange Names
 BITFINEX = "bitfinex"
-BINANCE = "binance"
-OKEX = "okex"  # OKEx现货
-OKEX_MARGIN = "okex_margin"  # OKEx杠杆
-OKEX_FUTURE = "okex_future"  # OKEx交割合约
-OKEX_SWAP = "okex_swap"  # OKEx永续合约
-BITMEX = "bitmex"
-HUOBI = "huobi"
-HUOBI_FUTURE = "huobi_future"
-OKCOIN = "okcoin"
+BINANCE = "binance"  # Binance https://www.binance.com
+OKEX = "okex"  # OKEx SPOT https://www.okex.me/spot/trade
+OKEX_MARGIN = "okex_margin"  # OKEx MARGIN https://www.okex.me/spot/marginTrade
+OKEX_FUTURE = "okex_future"  # OKEx FUTURE https://www.okex.me/future/trade
+OKEX_SWAP = "okex_swap"  # OKEx SWAP https://www.okex.me/future/swap
+BITMEX = "bitmex"  # BitMEX https://www.bitmex.com/
+HUOBI = "huobi"  # Huobi https://www.hbg.com/zh-cn/
+HUOBI_FUTURE = "huobi_future"  # Huobi Future https://www.hbdm.com/en-us/contract/exchange/
 COINBASE = "coinbase"
 MXC = "mxc"
-DERIBIT = "deribit"
+DERIBIT = "deribit"  # Deribit https://www.deribit.com/
 KRAKEN = "kraken"
 BITSTAMP = "bitstamp"
 GEMINI = "gemini"
-FOTA = "fota"
-BIBOX = "bibox"
-COINSUPER = "coinsuper"
+COINSUPER = "coinsuper"  # Coinsuper https://www.coinsuper.com/
 
 
-# 行情类型
+# Market Types
 MARKET_TYPE_TICKER = "ticker"
 MARKET_TYPE_TRADE = "trade"
 MARKET_TYPE_ORDERBOOK = "orderbook"

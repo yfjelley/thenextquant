@@ -79,9 +79,10 @@ python src/main.py config.json
     - [Binance(币安) 现货](example/binance)
     - [OKEx 现货](example/okex)
     - [OKEx Margin 杠杆](example/okex_margin)
-    - [OKEx Future 交割合约](https://www.okex.me/future/trade)
+    - [OKEx Future 交割合约](example/okex_future)
+    - [OKEx Swap 永续合约](example/okex_swap)
     - [Deribit 合约](example/deribit)
-    - [Bitmex 合约](https://www.bitmex.com)
+    - [Bitmex 合约](example/bitmex)
     - [Huobi(火币) 现货](example/huobi)
     - [Coinsuper(币成) 现货](example/coinsuper)
     - To be continued ...

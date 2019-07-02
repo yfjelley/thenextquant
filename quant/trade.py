@@ -1,41 +1,51 @@
 # -*- coding:utf-8 -*-
 
 """
-Trade 交易模块，整合所有交易所为一体
+Trade Module.
 
 Author: HuangTao
 Date:   2019/04/21
+Email:  huangtao@ifclover.com
 """
 
 from quant.error import Error
 from quant.utils import logger
 from quant.tasks import SingleTask
 from quant.order import ORDER_TYPE_LIMIT
-from quant.const import OKEX, OKEX_MARGIN, OKEX_FUTURE, DERIBIT, BITMEX, BINANCE, HUOBI, COINSUPER
+from quant.const import OKEX, OKEX_MARGIN, OKEX_FUTURE, OKEX_SWAP, DERIBIT, BITMEX, BINANCE, HUOBI, COINSUPER
 
 
 class Trade:
-    """ 交易模块
+    """ Trade Module.
+
+    Attributes:
+        strategy: What's name would you want to created for you strategy.
+        platform: Exchange platform name. e.g. binance/okex/bitmex.
+        symbol: Symbol name for your trade. e.g. BTC/USDT.
+        host: HTTP request host.
+        wss: Websocket address.
+        account: Account name for this trade exchange.
+        access_key: Account's ACCESS KEY.
+        secret_key Account's SECRET KEY.
+        passphrase API KEY Passphrase.
+        asset_update_callback: You can use this param to specific a async callback function when you initializing Trade
+            object. `asset_update_callback` is like `async def on_asset_update_callback(asset: Asset): pass` and this
+            callback function will be executed asynchronous when received AssetEvent.
+        order_update_callback: You can use this param to specific a async callback function when you initializing Trade
+            object. `order_update_callback` is like `async def on_order_update_callback(order: Order): pass` and this
+            callback function will be executed asynchronous when some order state updated.
+        position_update_callback: You can use this param to specific a async callback function when you initializing
+            Trade object. `position_update_callback` is like `async def on_position_update_callback(position: Position): pass`
+            and this callback function will be executed asynchronous when position updated.
+        init_success_callback: You can use this param to specific a async callback function when you initializing Trade
+            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error): pass`
+            and this callback function will be executed asynchronous after Trade module object initialized successfully.
     """
 
     def __init__(self, strategy=None, platform=None, symbol=None, host=None, wss=None, account=None, access_key=None,
                  secret_key=None, passphrase=None, asset_update_callback=None, order_update_callback=None,
                  position_update_callback=None, init_success_callback=None, **kwargs):
-        """ 初始化
-        @param strategy 策略名称
-        @param platform 交易平台
-        @param symbol 交易对
-        @param host 交易平台REST API地址
-        @param wss 交易平台websocket地址
-        @param account 交易账户
-        @param access_key 账户 ACCESS KEY
-        @param secret_key 账户 SECRET KEY
-        @param passphrase 账户交易密码(OKEx使用)
-        @param asset_update_callback 资产更新回调，async异步函数 async asset_update_callback(asset): pass
-        @param order_update_callback 订单更新回调，async异步函数 async order_update_callback(order): pass
-        @param position_update_callback 持仓更新回调，async异步函数 async position_update_callback(position): pass
-        @param init_success_callback 初始化成功回调，async异步函数 async init_success_callback(success, error): pass
-        """
+        """initialize trade object."""
         kwargs["strategy"] = strategy
         kwargs["platform"] = platform
         kwargs["symbol"] = symbol
@@ -56,6 +66,8 @@ class Trade:
             from quant.platform.okex_margin import OKExMarginTrade as T
         elif platform == OKEX_FUTURE:
             from quant.platform.okex_future import OKExFutureTrade as T
+        elif platform == OKEX_SWAP:
+            from quant.platform.okex_swap import OKExSwapTrade as T
         elif platform == DERIBIT:
             from quant.platform.deribit import DeribitTrade as T
         elif platform == BITMEX:
@@ -92,27 +104,45 @@ class Trade:
         return self._t.rest_api
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT, **kwargs):
-        """ 创建委托单
-        @param action 交易方向 BUY/SELL
-        @param price 委托价格
-        @param quantity 委托数量(当为负数时，代表合约操作空单)
-        @param order_type 委托类型 LIMIT/MARKET
-        @return (order_no, error) 如果成功，order_no为委托单号，error为None，否则order_no为None，error为失败信息
+        """ Create an order.
+
+        Args:
+            action: Trade direction, BUY or SELL.
+            price: Price of each contract.
+            quantity: The buying or selling quantity.
+            order_type: Specific type of order, LIMIT or MARKET. (default LIMIT)
+
+        Returns:
+            order_no: Order ID if created successfully, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         order_no, error = await self._t.create_order(action, price, quantity, order_type, **kwargs)
         return order_no, error
 
     async def revoke_order(self, *order_nos):
-        """ 撤销委托单
-        @param order_nos 订单号列表，可传入任意多个，如果不传入，那么就撤销所有订单
-        @return (success, error) success为撤单成功列表，error为撤单失败的列表
+        """ Revoke (an) order(s).
+
+        Args:
+            order_nos: Order id list, you can set this param to 0 or multiple items. If you set 0 param, you can cancel
+                all orders for this symbol(initialized in Trade object). If you set 1 param, you can cancel an order.
+                If you set multiple param, you can cancel multiple orders. Do not set param length more than 100.
+
+        Returns:
+            success: If execute successfully, return success information, otherwise it's None.
+            error: If execute failed, return error information, otherwise it's None.
         """
         success, error = await self._t.revoke_order(*order_nos)
         return success, error
 
     async def get_open_order_nos(self):
-        """ 获取未完成委托单id列表
-        @return (result, error) result为成功获取的未成交订单列表，error如果成功为None，如果不成功为错误信息
+        """ Get open order id list.
+
+        Args:
+            None.
+
+        Returns:
+            order_nos: Open order id list, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         result, error = await self._t.get_open_order_nos()
         return result, error
