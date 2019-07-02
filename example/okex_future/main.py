@@ -31,7 +31,7 @@ class MyStrategy:
         """ 初始化
         """
         self.strategy = config.strategy
-        self.platform = const.OKEX_SWAP
+        self.platform = const.OKEX_FUTURE
         self.account = config.platforms.get(self.platform, {}).get("account")
         self.access_key = config.platforms.get(self.platform, {}).get("access_key")
         self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")

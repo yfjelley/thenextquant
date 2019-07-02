@@ -1,7 +1,7 @@
 
-## OKEx Future (交割合约)
+## Bitmex (合约)
 
-本文主要介绍如何通过框架SDK开发 [OKEx Future](https://www.okex.me/future/swap) 交易所的交易系统。
+本文主要介绍如何通过框架SDK开发 [Bitmex (合约)](https://www.bitmex.com/) 交易所的交易系统。
 
 ### 1. 准备条件
 
@@ -11,12 +11,12 @@
 - 部署 [RabbitMQ 事件中心服务](../../docs/others/rabbitmq_deploy.md) ---- 事件中心的核心组成部分；
 - 部署 [Market 行情服务](https://github.com/TheNextQuant/Market) ---- 订阅行情事件，如果策略不需要行情数据，那么此服务可以不用部署；
 - 部署 [Asset 资产服务](https://github.com/TheNextQuant/Asset) ---- 账户资产更新事件推送，如果策略不需要账户资产信息，那么此服务可以不用部署；
-- 注册 [OKEx Future (交割合约)](https://www.okex.me/future/swap) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
+- 注册 [Bitmex (合约)](https://www.bitmex.com/) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
 
 
 ### 2. 一个简单的策略
 
-> 我们选用的交易对(合约)为 `BTC-USD-190705`， 策略执行的几个步骤:  
+> 我们选用的交易对(合约)为 `XBTUSD`， 策略执行的几个步骤:  
 - 在当前盘口价差10美金的位置，挂一个买入10手的委托单，即开仓大小为10；
 - 委托单成功成交之后，即持多仓大小10；
 - 程序设置5分钟倒计时平仓，即开仓5分钟后平仓(为了简单此处按市价平仓)；
@@ -54,11 +54,10 @@ class MyStrategy:
         """ 初始化
         """
         self.strategy = config.strategy
-        self.platform = const.OKEX_FUTURE
+        self.platform = const.BITMEX
         self.account = config.platforms.get(self.platform, {}).get("account")
         self.access_key = config.platforms.get(self.platform, {}).get("access_key")
         self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")
-        self.passphrase = config.platforms.get(self.platform, {}).get("passphrase")
         self.symbol = config.symbol
 
         self.buy_open_order_no = None  # 开仓做多订单号
@@ -76,7 +75,6 @@ class MyStrategy:
             "account": self.account,
             "access_key": self.access_key,
             "secret_key": self.secret_key,
-            "passphrase": self.passphrase,
             "order_update_callback": self.on_event_order_update,
             "position_update_callback": self.on_event_position_update
         }
@@ -222,7 +220,7 @@ if __name__ == '__main__':
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
 - PLATFORMS 指定需要使用的交易账户，注意名字是 `okex_future` ；
 - strategy 策略的名称；
-- symbol 策略运行的交易对(合约)，比如: `BTC-USD-190705` ；
+- symbol 策略运行的交易对(合约)，比如: `XBTUSD` ；
 
 配置文件比较简单，更多的配置可以参考 [配置文件说明](../../docs/configure/README.md)。
 

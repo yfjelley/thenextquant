@@ -7,12 +7,13 @@
     },
     "PROXY": "http://127.0.0.1:1087",
     "PLATFORMS": {
-        "bitmex": {
+        "okex_future": {
             "account": "abc123@gmail.com",
             "access_key": "ACCESS KEY",
-            "secret_key": "SECRET KEY"
+            "secret_key": "SECRET KEY",
+            "passphrase": "abc123"
         }
     },
     "strategy": "my_test_strategy",
-    "symbol": "XBTUSD"
+    "symbol": "BTC-USD-190705"
 }
