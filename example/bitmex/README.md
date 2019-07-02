@@ -218,7 +218,7 @@ if __name__ == '__main__':
 我们在配置文件里，加入了如下配置:
 - RABBITMQ 指定事件中心服务器，此配置需要和 [Market 行情服务](https://github.com/TheNextQuant/Market) 、[Asset 资产服务](https://github.com/TheNextQuant/Asset) 一致；
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
-- PLATFORMS 指定需要使用的交易账户，注意名字是 `okex_future` ；
+- PLATFORMS 指定需要使用的交易账户，注意名字是 `bitmex` ；
 - strategy 策略的名称；
 - symbol 策略运行的交易对(合约)，比如: `XBTUSD` ；
 
