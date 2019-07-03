@@ -67,23 +67,23 @@ class AsyncHttpRequests(object):
                 error = "http method error!"
                 return None, None, error
         except Exception as e:
-            logger.error("method:", method, "url:", url, "params:", params, "body:", body, "data:", data, "Error:", e,
-                         caller=cls)
+            logger.error("method:", method, "url:", url, "headers:", headers, "params:", params, "body:", body,
+                         "data:", data, "Error:", e, caller=cls)
             return None, None, e
         code = response.status
         if code not in (200, 201, 202, 203, 204, 205, 206):
             text = await response.text()
-            logger.error("method:", method, "url:", url, "params:", params, "body:", body, "headers:", headers,
-                         "code:", code, "result:", text, caller=cls)
+            logger.error("method:", method, "url:", url, "headers:", headers, "params:", params, "body:", body,
+                         "data:", data, "code:", code, "result:", text, caller=cls)
             return code, None, text
         try:
             result = await response.json()
         except:
             result = await response.text()
-            logger.warn("response data is not json format!", "method:", method, "url:", url, "params:", params,
-                        "body:", body, "data:", data, "code:", code, "result:", result, caller=cls)
-        logger.debug("method:", method, "url:", url, "params:", params, "body:", body, "data:", data,
-                     "code:", code, "result:", json.dumps(result), caller=cls)
+            logger.warn("response data is not json format!", "method:", method, "url:", url, "headers:", headers,
+                        "params:", params, "body:", body, "data:", data, "code:", code, "result:", result, caller=cls)
+        logger.debug("method:", method, "url:", url, "headers:", headers, "params:", params, "body:", body,
+                     "data:", data, "code:", code, "result:", json.dumps(result), caller=cls)
         return code, result, None
 
     @classmethod
