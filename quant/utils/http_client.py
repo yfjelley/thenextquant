@@ -1,10 +1,11 @@
 # -*- coding:utf-8 -*-
 
 """
-aiohttp client接口封装
+Asynchronous HTTP Request Client.
 
 Author: HuangTao
 Date:   2018/05/03
+Email:  huangtao@ifclover.com
 """
 
 import json
@@ -16,26 +17,40 @@ from quant.config import config
 
 
 class AsyncHttpRequests(object):
-    """ HTTP异步请求封装
+    """ Asynchronous HTTP Request Client.
     """
 
-    _SESSIONS = {}  # 每个域名保持一个公用的session连接（每个session持有自己的连接池），这样可以节省资源、加快请求速度
+    # Every domain name holds a connection session, for less system resource utilization and faster request speed.
+    _SESSIONS = {}  # {"domain-name": session, ... }
 
     @classmethod
     async def fetch(cls, method, url, params=None, body=None, data=None, headers=None, timeout=30, **kwargs):
-        """ 发起HTTP请求
-        @param method 请求方法 GET/POST/PUT/DELETE
-        @param url 请求的url
-        @param params 请求的uri参数
-        @param body 请求的body参数
-        @param data json格式的数据
-        @param headers 请求的headers
-        @param timeout 超时时间(秒)
-        @return (code, success, error) 如果成功，error为None，失败success为None，error为失败信息
+        """ Create a HTTP request.
+
+        Args:
+            method: HTTP request method. (GET/POST/PUT/DELETE)
+            url: Request url.
+            params: HTTP query params.
+            body: HTTP request body, string or bytes format.
+            data: HTTP request body, dict format.
+            headers: HTTP request header.
+            timeout: HTTP request timeout(seconds), default is 30s.
+
+            kwargs:
+                proxy: HTTP proxy.
+
+        Return:
+            code: HTTP response code.
+            success: HTTP response data. If something wrong, this field is None.
+            error: If something wrong, this field will holding a Error information, otherwise it's None.
+
+        Raises:
+            HTTP request exceptions or response data parse exceptions. All the exceptions will be captured and return
+            Error information.
         """
         session = cls._get_session(url)
         if not kwargs.get("proxy"):
-            kwargs["proxy"] = config.proxy  # HTTP代理配置
+            kwargs["proxy"] = config.proxy  # If there is a HTTP PROXY specific in config file?
         try:
             if method == "GET":
                 response = await session.get(url, params=params, headers=headers, timeout=timeout, **kwargs)
@@ -64,44 +79,50 @@ class AsyncHttpRequests(object):
         try:
             result = await response.json()
         except:
-            logger.warn("response data is not json format!", "method:", method, "url:", url, "params:", params,
-                        caller=cls)
             result = await response.text()
+            logger.warn("response data is not json format!", "method:", method, "url:", url, "params:", params,
+                        "body:", body, "data:", data, "code:", code, "result:", result, caller=cls)
         logger.debug("method:", method, "url:", url, "params:", params, "body:", body, "data:", data,
                      "code:", code, "result:", json.dumps(result), caller=cls)
         return code, result, None
 
     @classmethod
     async def get(cls, url, params=None, body=None, data=None, headers=None, timeout=30, **kwargs):
-        """ HTTP GET 请求
+        """ HTTP GET
         """
         result = await cls.fetch("GET", url, params, body, data, headers, timeout, **kwargs)
         return result
 
     @classmethod
     async def post(cls, url, params=None, body=None, data=None, headers=None, timeout=30, **kwargs):
-        """ HTTP POST 请求
+        """ HTTP POST
         """
         result = await cls.fetch("POST", url, params, body, data, headers, timeout, **kwargs)
         return result
 
     @classmethod
     async def delete(cls, url, params=None, body=None, data=None, headers=None, timeout=30, **kwargs):
-        """ HTTP DELETE 请求
+        """ HTTP DELETE
         """
         result = await cls.fetch("DELETE", url, params, body, data, headers, timeout, **kwargs)
         return result
 
     @classmethod
     async def put(cls, url, params=None, body=None, data=None, headers=None, timeout=30, **kwargs):
-        """ HTTP PUT 请求
+        """ HTTP PUT
         """
         result = await cls.fetch("PUT", url, params, body, data, headers, timeout, **kwargs)
         return result
 
     @classmethod
     def _get_session(cls, url):
-        """ 获取url对应的session连接
+        """ Get the connection session for url's domain, if no session, create a new.
+
+        Args:
+            url: HTTP request url.
+
+        Returns:
+            session: HTTP request session.
         """
         parsed_url = urlparse(url)
         key = parsed_url.netloc or parsed_url.hostname
