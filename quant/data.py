@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 """
-Datas to db.
+Data to db.
 
 Author: HuangTao
 Date:   2018/05/17
@@ -14,6 +14,7 @@ from quant.utils.mongo import MongoDBBase
 
 class KLineData(MongoDBBase):
     """ Save or fetch kline data via MongoDB.
+
     Data struct:
         {
             "o": open, # Open price
@@ -37,13 +38,18 @@ class KLineData(MongoDBBase):
         super(KLineData, self).__init__(self._db, self._collection)
 
     async def create_new_kline(self, symbol, open, high, low, close, timestamp):
-        """ 创建新K线数据
-        @param symbol 交易对
-        @param open 开盘价
-        @param high 最高价
-        @param low 最低价
-        @param close 收盘价
-        @param timestamp 时间戳(秒)
+        """ Insert kline data to db.
+
+        Args:
+            symbol: Symbol pair, e.g. ETH/BTC.
+            open: Open price.
+            high: Highest price.
+            low: Lowest price.
+            close: Close price.
+            timestamp: Millisecond timestamp.
+
+        Returns:
+            kline_id: Kline id, it's a MongoDB document _id.
         """
         cursor = self._get_kline_cursor_by_symbol(symbol)
         data = {
@@ -57,9 +63,14 @@ class KLineData(MongoDBBase):
         return kline_id
 
     async def get_kline_at_ts(self, symbol, ts=None):
-        """ 获取一条指定时间戳的K线数据
-        @param symbol 交易对
-        @param ts 时间戳(秒) 如果为空，那么就是当前时间戳
+        """ Get a kline data, you can specific symbol and timestamp.
+
+        Args:
+            symbol: Symbol pair, e.g. ETH/BTC.
+            ts: Millisecond timestamp. If this param is None, ts will be specific current timestamp.
+
+        Returns:
+            result: kline data, dict format. If no any data in db, result is None.
         """
         cursor = self._get_kline_cursor_by_symbol(symbol)
         if ts:
@@ -71,25 +82,35 @@ class KLineData(MongoDBBase):
         return result
 
     async def get_latest_kline_by_symbol(self, symbol):
-        """ 根据交易对，获取K线数据
-        @param symbol 交易对
+        """ Get latest kline data by symbol.
+
+        Args:
+            symbol: Symbol pair, e.g. ETH/BTC.
+
+        Returns:
+            result: kline data, dict format. If no any data in db, result is None.
         """
         cursor = self._get_kline_cursor_by_symbol(symbol)
         sort = [("create_time", -1)]
         result = await self.find_one(sort=sort, cursor=cursor)
         return result
 
-    async def get_kline_between_ts(self, symbol, start_ts, end_ts):
-        """ 获取一段时间范围内的K线数据
-        @param symbol 交易对
-        @param start_ts 开始时间戳(秒)
-        @param end_ts 结束时间戳(秒)
+    async def get_kline_between_ts(self, symbol, start, end):
+        """ Get some kline data between two timestamps.
+
+        Args:
+            symbol: Symbol pair, e.g. ETH/BTC.
+            start: Millisecond timestamp, the start time you want to specific.
+            end: Millisecond timestamp, the end time you want to specific.
+
+        Returns:
+            result: kline data, list format. If no any data in db, result is a empty list.
         """
         cursor = self._get_kline_cursor_by_symbol(symbol)
         spec = {
             "t": {
-                "$gte": start_ts,
-                "$lte": end_ts
+                "$gte": start,
+                "$lte": end
             }
         }
         fields = {
@@ -101,9 +122,14 @@ class KLineData(MongoDBBase):
         return datas
 
     def _get_kline_cursor_by_symbol(self, symbol):
-        """ collection对应的交易对
-        @param symbol 交易对
-        * NOTE: BTC/USDT => bitfinex.kline_btc_usdt
+        """ Get a cursor name by symbol, we will convert a symbol name to a collection name.
+            e.g. ETH/BTC => kline_eth_btc
+
+        Args:
+            symbol: Symbol pair, e.g. ETH/BTC.
+
+        Returns:
+            cursor: DB query cursor name.
         """
         cursor = self._k_to_c.get(symbol)
         if not cursor:
@@ -115,43 +141,64 @@ class KLineData(MongoDBBase):
 
 
 class AssetData(MongoDBBase):
-    """ 资产数据存储
-    资产数据结构:
-        {}
+    """ Save or fetch asset data via MongoDB.
+
+    Data struct:
+        {
+            "platform": "binance", # Exchange platform name.
+            "account": "test@gmail.com", # Account name.
+            "timestamp": 1234567890, # Millisecond timestamp.
+            "BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"},  # Currency details for BTC.
+            "ETH": { ... },
+            ...
+        }
     """
 
     def __init__(self):
-        """ 初始化
-        """
-        self._db = "strategy"  # 数据库名
-        self._collection = "asset"  # 表名
+        """Initialize object."""
+        self._db = "asset"  # db name
+        self._collection = "asset"  # collection name
         super(AssetData, self).__init__(self._db, self._collection)
 
-    async def create_new_asset(self, platform, account, asset):
-        """ 创建新的资产信息
-        @param platform 交易平台
-        @param account 账户
-        @param asset 资产详情
+    async def create_new_asset(self, platform, account, asset, timestamp):
+        """ Insert asset data to db.
+
+        Args:
+            platform: Exchange platform name. e.g. binance/bitmex/okex
+            account: Account name. e.g. test@gmail.com
+            asset: Asset data, dict format. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+            timestamp: Millisecond timestamp.
+
+        Returns:
+            asset_id: Asset id, it's a MongoDB document _id.
         """
         d = {
             "platform": platform,
-            "account": account
+            "account": account,
+            "timestamp": timestamp
         }
         for key, value in asset.items():
             d[key] = value
         asset_id = await self.insert(d)
         return asset_id
 
-    async def update_asset(self, platform, account, asset, delete=None):
-        """ 更新资产
-        @param platform 交易平台
-        @param account string 账户
-        @param asset dict 资产详情
-        @param delete list 需要清除的币列表（已经置零的资产）
+    async def update_asset(self, platform, account, asset, timestamp, delete=None):
+        """ Update asset data.
+
+        Args:
+            platform: Exchange platform name. e.g. binance/bitmex/okex
+            account: Account name. e.g. test@gmail.com
+            asset: Asset data, dict format. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+            timestamp: Millisecond timestamp.
+            delete: Currency name list for delete.
+
+        Returns:
+            count: How many documents have been updated.
         """
         spec = {
             "platform": platform,
-            "account": account
+            "account": account,
+            "timestamp": timestamp
         }
         update_fields = {"$set": asset}
         if delete:
@@ -159,22 +206,25 @@ class AssetData(MongoDBBase):
             for key in delete:
                 d[key] = 1
             update_fields["$unset"] = d
-        await self.update(spec, update_fields=update_fields, upsert=True)
+        count = await self.update(spec, update_fields=update_fields, upsert=True)
+        return count
 
     async def get_latest_asset(self, platform, account):
-        """ 查询最新的资产信息
-        @param platform 交易平台
-        @param account 账户
+        """ Get latest asset data.
+
+        Args:
+            platform: Exchange platform name. e.g. binance/bitmex/okex
+            account: Account name. e.g. test@gmail.com
+
+        Returns:
+            asset: Asset data, e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
         """
         spec = {
             "platform": platform,
             "account": account
         }
-        _sort = [("update_time", -1)]
+        _sort = [("timestamp", -1)]
         fields = {
-            "platform": 0,
-            "account": 0,
-            "index": 0,
             "create_time": 0,
             "update_time": 0
         }
@@ -185,27 +235,41 @@ class AssetData(MongoDBBase):
 
 
 class AssetSnapshotData(MongoDBBase):
-    """ 资产数据快照存储 每隔一个小时，从 strategy.asset 表中，创建一次快照数据
-    资产数据结构:
-        {}
+    """ Save or fetch asset snapshot data via MongoDB.
+
+    Data struct:
+        {
+            "platform": "binance", # Exchange platform name.
+            "account": "test@gmail.com", # Account name.
+            "timestamp": 1234567890, # Millisecond timestamp.
+            "BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"},  # Currency details for BTC.
+            "ETH": { ... },
+            ...
+        }
     """
 
     def __init__(self):
-        """ 初始化
-        """
-        self._db = "strategy"  # 数据库名
-        self._collection = "asset_snapshot"  # 表名
+        """Initialize object."""
+        self._db = "asset"  # db name
+        self._collection = "snapshot"  # collection name
         super(AssetSnapshotData, self).__init__(self._db, self._collection)
 
-    async def create_new_asset(self, platform, account, asset):
-        """ 创建新的资产信息
-        @param platform 交易平台
-        @param account 账户
-        @param asset 资产详情
+    async def create_new_asset(self, platform, account, asset, timestamp):
+        """ Insert asset snapshot data to db.
+
+        Args:
+            platform: Exchange platform name. e.g. binance/bitmex/okex
+            account: Account name. e.g. test@gmail.com
+            timestamp: Millisecond timestamp.
+            asset: Asset data, dict format. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+
+        Returns:
+            asset_id: Asset id, it's a MongoDB document _id.
         """
         d = {
             "platform": platform,
-            "account": account
+            "account": account,
+            "timestamp": timestamp
         }
         for key, value in asset.items():
             d[key] = value
@@ -213,20 +277,25 @@ class AssetSnapshotData(MongoDBBase):
         return asset_id
 
     async def get_asset_snapshot(self, platform, account, start=None, end=None):
-        """ 获取资产快照
-        @param platform 交易平台
-        @param account 账户
-        @param start 开始时间戳(秒)
-        @param end 结束时间戳(秒)
+        """ Get asset snapshot data from db.
+
+        Args:
+            platform: Exchange platform name. e.g. binance/bitmex/okex
+            account: Account name. e.g. test@gmail.com
+            start: Start time, Millisecond timestamp, default is a day ago.
+            end: End time, Millisecond timestamp, default is current timestamp.
+
+        Returns:
+            datas: Asset data list. e.g. [{"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }, ... ]
         """
         if not end:
-            end = tools.get_cur_timestamp()  # 截止时间默认当前时间
+            end = tools.get_cur_timestamp()  # Current timestamp
         if not start:
-            start = end - 60 * 60 * 24  # 开始时间默认一天前
+            start = end - 60 * 60 * 24  # A day ago.
         spec = {
             "platform": platform,
             "account": account,
-            "create_time": {
+            "timestamp": {
                 "$gte": start,
                 "$lte": end
             }
@@ -240,15 +309,20 @@ class AssetSnapshotData(MongoDBBase):
         return datas
 
     async def get_latest_asset_snapshot(self, platform, account):
-        """ 查询最新的资产快照
-        @param platform 交易平台
-        @param account 账户
+        """ Get latest asset snapshot data.
+
+        Args:
+            platform: Exchange platform name. e.g. binance/bitmex/okex
+            account: Account name. e.g. test@gmail.com
+
+        Returns:
+            asset: Asset data, e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
         """
         spec = {
             "platform": platform,
             "account": account
         }
-        _sort = [("update_time", -1)]
+        _sort = [("timestamp", -1)]
         asset = await self.find_one(spec, sort=_sort)
         if asset:
             del asset["_id"]
@@ -256,89 +330,115 @@ class AssetSnapshotData(MongoDBBase):
 
 
 class OrderData(MongoDBBase):
-    """ 订单数据存储
+    """ Save or fetch order data via MongoDB.
+
+    Data struct:
+        {
+            "p": order.platform,
+            "a": order.account,
+            "s": order.strategy,
+            "S": order.symbol,
+            "n": order.order_no,
+            "A": order.action,
+            "t": order.order_type,
+            "st": order.status,
+            "pr": order.price,
+            "ap": order.avg_price,
+            "q": order.quantity,
+            "r": order.remain,
+            "T": order.trade_type,
+            "ct": order.ctime,
+            "ut": order.utime
+        }
+        All the fields are defined in Order module.
     """
 
     def __init__(self):
-        """ 初始化
-        @param db 数据库
-        @param collection 表
-        """
-        self._db = "strategy"  # 数据库名
-        self._collection = "order"  # 表名
+        """Initialize object."""
+        self._db = "strategy"  # db name
+        self._collection = "order"  # collection name
         super(OrderData, self).__init__(self._db, self._collection)
 
     async def create_new_order(self, order):
-        """ 创建新订单
-        @param order 订单对象
+        """ Insert order data to db.
+
+        Args:
+            order: Order object.
+
+        Returns:
+            order_id: order data id, it's a MongoDB document _id.
         """
         data = {
-            "platform": order.platform,
-            "account": order.account,
-            "strategy": order.strategy,
-            "symbol": order.symbol,
-            "order_no": order.order_no,
-            "action": order.action,
-            "order_type": order.order_type,
-            "status": order.status,
-            "price": order.price,
-            "quantity": order.quantity,
-            "remain": order.remain,
-            "timestamp": order.timestamp,
+            "p": order.platform,
+            "a": order.account,
+            "s": order.strategy,
+            "S": order.symbol,
+            "n": order.order_no,
+            "A": order.action,
+            "t": order.order_type,
+            "st": order.status,
+            "pr": order.price,
+            "ap": order.avg_price,
+            "q": order.quantity,
+            "r": order.remain,
+            "T": order.trade_type,
+            "ct": order.ctime,
+            "ut": order.utime
         }
         order_id = await self.insert(data)
         return order_id
 
     async def get_order_by_no(self, platform, order_no):
-        """ 获取订单最新信息
-        @param platform 交易平台
-        @param order_no 订单号
+        """ Get a order by order no.
+
+        Args:
+            platform: Exchange platform name.
+            order_no: order no.
+
+        Returns:
+            data: order data, dict format.
         """
         spec = {
-            "platform": platform,
-            "order_no": order_no
+            "p": platform,
+            "n": order_no
         }
         data = await self.find_one(spec)
         return data
 
-    async def get_order_by_nos(self, platform, order_nos):
-        """ 批量获取订单状态
-        @param platform 交易平台
-        @param order_nos 订单号列表
-        """
-        spec = {
-            "platform": platform,
-            "order_no": {"$in": order_nos}
-        }
-        fields = {
-            "status": 1
-        }
-        datas = await self.get_list(spec, fields=fields)
-        return datas
-
     async def update_order_infos(self, order):
-        """ 更新订单信息
-        @param order 订单对象
+        """ Update order information.
+
+        Args:
+            order: Order object.
+
+        Returns:
+            count: How many documents have been updated.
         """
         spec = {
-            "platform": order.platform,
-            "order_no": order.order_no
+            "p": order.platform,
+            "n": order.order_no
         }
         update_fields = {
-            "status": order.status,
-            "remain": order.remain
+            "s": order.status,
+            "r": order.remain
         }
-        await self.update(spec, update_fields={"$set": update_fields})
+        count = await self.update(spec, update_fields={"$set": update_fields})
+        return count
 
     async def get_latest_order(self, platform, symbol):
-        """ 获取一条最新的订单
-        @param platform 交易平台
-        @param symbol 交易对
+        """ Get a latest order data.
+
+        Args:
+            platform: Exchange platform name.
+            symbol: Symbol name.
+
+        Return:
+            data: order data, dict format.
         """
         spec = {
-            "platform": platform,
-            "symbol": symbol
+            "p": platform,
+            "S": symbol
         }
-        _sort = [("update_time", -1)]
+        _sort = [("ut", -1)]
         data = await self.find_one(spec, sort=_sort)
         return data
