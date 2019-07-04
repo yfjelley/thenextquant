@@ -320,7 +320,7 @@ class OKExFutureTrade(Websocket):
             for order_info in result["order_info"]:
                 order = self._update_order(order_info)
                 if self._order_update_callback:
-                    SingleTask.run(self._order_update_callback, order)
+                    SingleTask.run(self._order_update_callback, copy.copy(order))
 
             # 获取当前持仓
             position, error = await self._rest_api.get_position(self._symbol)
@@ -332,7 +332,7 @@ class OKExFutureTrade(Websocket):
             if len(position["holding"]) > 0:
                 self._update_position(position["holding"][0])
             if self._position_update_callback:
-                SingleTask.run(self._position_update_callback, self.position)
+                SingleTask.run(self._position_update_callback, copy.copy(self.position))
 
             # 订阅account, order, position
             data = {
@@ -358,7 +358,7 @@ class OKExFutureTrade(Websocket):
             for data in msg["data"]:
                 order = self._update_order(data)
                 if order and self._order_update_callback:
-                    SingleTask.run(self._order_update_callback, order)
+                    SingleTask.run(self._order_update_callback, copy.copy(order))
             return
 
         # 持仓更新
@@ -366,7 +366,7 @@ class OKExFutureTrade(Websocket):
             for data in msg["data"]:
                 self._update_position(data)
                 if self._position_update_callback:
-                    SingleTask.run(self._position_update_callback, self.position)
+                    SingleTask.run(self._position_update_callback, copy.copy(self.position))
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
         """ 创建订单

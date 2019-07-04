@@ -129,7 +129,7 @@ class DeribitTrade(Websocket):
         for order_info in success:
             order = self._update_order(order_info)
             if self._order_update_callback:
-                SingleTask.run(self._order_update_callback, order)
+                SingleTask.run(self._order_update_callback, copy.copy(order))
 
         # 获取持仓
         await self._check_position_update()
@@ -367,7 +367,7 @@ class DeribitTrade(Websocket):
                 update = True
                 self._position.update()
         if update:
-            await self._position_update_callback(self._position)
+            await self._position_update_callback(copy.copy(self._position))
 
     def _update_order(self, order_info):
         """ 更新订单信息

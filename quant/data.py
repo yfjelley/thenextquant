@@ -9,6 +9,7 @@ Email:  huangtao@ifclover.com
 """
 
 from quant.utils import tools
+from quant.market import Kline
 from quant.utils.mongo import MongoDBBase
 
 
@@ -37,27 +38,22 @@ class KLineData(MongoDBBase):
         self._k_to_c = {}   # Kline types cursor for db. e.g. {"BTC/USD": "kline_btc_usd"}
         super(KLineData, self).__init__(self._db, self._collection)
 
-    async def create_new_kline(self, symbol, open, high, low, close, timestamp):
+    async def create_new_kline(self, kline: Kline):
         """ Insert kline data to db.
 
         Args:
-            symbol: Symbol pair, e.g. ETH/BTC.
-            open: Open price.
-            high: Highest price.
-            low: Lowest price.
-            close: Close price.
-            timestamp: Millisecond timestamp.
+            kline: kline object.
 
         Returns:
             kline_id: Kline id, it's a MongoDB document _id.
         """
-        cursor = self._get_kline_cursor_by_symbol(symbol)
+        cursor = self._get_kline_cursor_by_symbol(kline.symbol)
         data = {
-            "o": open,
-            "h": high,
-            "l": low,
-            "c": close,
-            "t": timestamp
+            "o": kline.open,
+            "h": kline.high,
+            "l": kline.low,
+            "c": kline.close,
+            "t": kline.timestamp
         }
         kline_id = await self.insert(data, cursor=cursor)
         return kline_id

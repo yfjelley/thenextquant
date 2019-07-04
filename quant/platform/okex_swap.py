@@ -392,7 +392,7 @@ class OKExSwapTrade(Websocket):
             for order_info in result["order_info"]:
                 order = self._update_order(order_info)
                 if self._order_update_callback:
-                    SingleTask.run(self._order_update_callback, order)
+                    SingleTask.run(self._order_update_callback, copy.copy(order))
 
             # Fetch positions from server.
             position, error = await self._rest_api.get_position(self._symbol)
@@ -403,7 +403,7 @@ class OKExSwapTrade(Websocket):
                 return
             self._update_position(position)
             if self._position_update_callback:
-                SingleTask.run(self._position_update_callback, self.position)
+                SingleTask.run(self._position_update_callback, copy.copy(self.position))
 
             # Subscribe order channel and position channel.
             data = {
@@ -429,7 +429,7 @@ class OKExSwapTrade(Websocket):
             for data in msg["data"]:
                 order = self._update_order(data)
                 if order and self._order_update_callback:
-                    SingleTask.run(self._order_update_callback, order)
+                    SingleTask.run(self._order_update_callback, copy.copy(order))
             return
 
         # Position update message receive.
@@ -437,7 +437,7 @@ class OKExSwapTrade(Websocket):
             for data in msg["data"]:
                 self._update_position(data)
                 if self._position_update_callback:
-                    SingleTask.run(self._position_update_callback, self.position)
+                    SingleTask.run(self._position_update_callback, copy.copy(self.position))
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT, match_price=0, **kwargs):
         """ Create an order.

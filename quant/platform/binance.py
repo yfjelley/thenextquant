@@ -366,7 +366,7 @@ class BinanceTrade(Websocket):
             order = Order(**info)
             self._orders[order_no] = order
             if self._order_update_callback:
-                SingleTask.run(self._order_update_callback, order)
+                SingleTask.run(self._order_update_callback, copy.copy(order))
 
         if self._init_success_callback:
             SingleTask.run(self._init_success_callback, True, None)
@@ -479,10 +479,7 @@ class BinanceTrade(Websocket):
             order.status = status
             order.utime = msg["T"]
             if self._order_update_callback:
-                SingleTask.run(self._order_update_callback, order)
-        # elif e == "outboundAccountInfo": # 账户资产更新
-        #     for func in self._account_update_cb_funcs:
-        #         asyncio.get_event_loop().create_task(func(msg))
+                SingleTask.run(self._order_update_callback, copy.copy(order))
 
     async def on_event_asset_update(self, asset: Asset):
         """ 资产数据更新回调

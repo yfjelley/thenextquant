@@ -492,7 +492,7 @@ class HuobiTrade(Websocket):
         if status in [ORDER_STATUS_FAILED, ORDER_STATUS_CANCELED, ORDER_STATUS_FILLED]:
             self._orders.pop(order_no)
         if order and self._order_update_callback:
-            SingleTask.run(self._order_update_callback, order)
+            SingleTask.run(self._order_update_callback, copy.copy(order))
 
     async def on_event_asset_update(self, asset: Asset):
         """ 资产数据更新回调

@@ -362,7 +362,7 @@ class OKExMarginTrade(Websocket):
                 order_info["utime"] = order_info["timestamp"]
                 order = self._update_order(order_info)
                 if self._order_update_callback:
-                    SingleTask.run(self._order_update_callback, order)
+                    SingleTask.run(self._order_update_callback, copy.copy(order))
 
             # 订阅 order
             data = {
@@ -390,7 +390,7 @@ class OKExMarginTrade(Websocket):
                 data["utime"] = data["last_fill_time"]
                 order = self._update_order(data)
                 if order and self._order_update_callback:
-                    SingleTask.run(self._order_update_callback, order)
+                    SingleTask.run(self._order_update_callback, copy.copy(order))
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
         """ 创建订单

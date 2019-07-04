@@ -274,7 +274,7 @@ class BitmexTrade(Websocket):
             for data in msg["data"]:
                 order = self._update_order(data)
                 if order and self._order_update_callback:
-                    SingleTask.run(self._order_update_callback, order)
+                    SingleTask.run(self._order_update_callback, copy.copy(order))
             return
 
         # 持仓更新
@@ -282,7 +282,7 @@ class BitmexTrade(Websocket):
             for data in msg["data"]:
                 self._update_position(data)
                 if self._position_update_callback:
-                    SingleTask.run(self._position_update_callback, self.position)
+                    SingleTask.run(self._position_update_callback, copy.copy(self.position))
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
         """ 创建订单
