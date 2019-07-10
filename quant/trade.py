@@ -26,8 +26,8 @@ class Trade:
         wss: Websocket address.
         account: Account name for this trade exchange.
         access_key: Account's ACCESS KEY.
-        secret_key Account's SECRET KEY.
-        passphrase API KEY Passphrase.
+        secret_key: Account's SECRET KEY.
+        passphrase: API KEY Passphrase. (Only for OKEx)
         asset_update_callback: You can use this param to specific a async callback function when you initializing Trade
             object. `asset_update_callback` is like `async def on_asset_update_callback(asset: Asset): pass` and this
             callback function will be executed asynchronous when received AssetEvent.
