@@ -9,11 +9,12 @@ Email:  huangtao@ifclover.com
 """
 
 from quant.utils import tools
+from quant.asset import Asset
 from quant.market import Kline
 from quant.utils.mongo import MongoDBBase
 
 
-class KLineData(MongoDBBase):
+class KLineData:
     """ Save or fetch kline data via MongoDB.
 
     Data struct:
@@ -36,7 +37,7 @@ class KLineData(MongoDBBase):
         self._collection = "kline"  # Table name. => MongoDB collection name.
         self._platform = platform
         self._k_to_c = {}   # Kline types cursor for db. e.g. {"BTC/USD": "kline_btc_usd"}
-        super(KLineData, self).__init__(self._db, self._collection)
+        self._db = MongoDBBase(self._db, self._collection)  # db instance
 
     async def create_new_kline(self, kline: Kline):
         """ Insert kline data to db.
@@ -55,7 +56,7 @@ class KLineData(MongoDBBase):
             "c": kline.close,
             "t": kline.timestamp
         }
-        kline_id = await self.insert(data, cursor=cursor)
+        kline_id = await self._db.insert(data, cursor=cursor)
         return kline_id
 
     async def get_kline_at_ts(self, symbol, ts=None):
@@ -74,7 +75,7 @@ class KLineData(MongoDBBase):
         else:
             spec = {}
         _sort = [("t", -1)]
-        result = await self.find_one(spec, sort=_sort, cursor=cursor)
+        result = await self._db.find_one(spec, sort=_sort, cursor=cursor)
         return result
 
     async def get_latest_kline_by_symbol(self, symbol):
@@ -88,7 +89,7 @@ class KLineData(MongoDBBase):
         """
         cursor = self._get_kline_cursor_by_symbol(symbol)
         sort = [("create_time", -1)]
-        result = await self.find_one(sort=sort, cursor=cursor)
+        result = await self._db.find_one(sort=sort, cursor=cursor)
         return result
 
     async def get_kline_between_ts(self, symbol, start, end):
@@ -114,7 +115,7 @@ class KLineData(MongoDBBase):
             "update_time": 0
         }
         _sort = [("t", 1)]
-        datas = await self.get_list(spec, fields=fields, sort=_sort, cursor=cursor)
+        datas = await self._db.get_list(spec, fields=fields, sort=_sort, cursor=cursor)
         return datas
 
     def _get_kline_cursor_by_symbol(self, symbol):
@@ -131,12 +132,12 @@ class KLineData(MongoDBBase):
         if not cursor:
             x, y = symbol.split("/")
             collection = "kline_{x}_{y}".format(x=x.lower(), y=y.lower())
-            cursor = self._conn[self._db][collection]
+            cursor = self._db._conn[self._db][collection]
             self._k_to_c[symbol] = cursor
         return cursor
 
 
-class AssetData(MongoDBBase):
+class AssetData:
     """ Save or fetch asset data via MongoDB.
 
     Data struct:
@@ -144,65 +145,50 @@ class AssetData(MongoDBBase):
             "platform": "binance", # Exchange platform name.
             "account": "test@gmail.com", # Account name.
             "timestamp": 1234567890, # Millisecond timestamp.
-            "BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"},  # Currency details for BTC.
-            "ETH": { ... },
-            ...
+            "assets": {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... } # Currency details for BTC...
         }
     """
 
+    DB = "asset"  # db name
+    COLLECTION = "asset"  # collection name
+
     def __init__(self):
         """Initialize object."""
-        self._db = "asset"  # db name
-        self._collection = "asset"  # collection name
-        super(AssetData, self).__init__(self._db, self._collection)
+        self._db = MongoDBBase(self.DB, self.COLLECTION)  # db instance
 
-    async def create_new_asset(self, platform, account, asset, timestamp):
+    async def create_new_asset(self, asset: Asset):
         """ Insert asset data to db.
 
         Args:
-            platform: Exchange platform name. e.g. binance/bitmex/okex
-            account: Account name. e.g. test@gmail.com
-            asset: Asset data, dict format. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-            timestamp: Millisecond timestamp.
+            asset: Asset object.
 
         Returns:
             asset_id: Asset id, it's a MongoDB document _id.
         """
         d = {
-            "platform": platform,
-            "account": account,
-            "timestamp": timestamp
+            "platform": asset.platform,
+            "account": asset.account,
+            "timestamp": asset.timestamp,
+            "assets": asset.assets
         }
-        for key, value in asset.items():
-            d[key] = value
-        asset_id = await self.insert(d)
+        asset_id = await self._db.insert(d)
         return asset_id
 
-    async def update_asset(self, platform, account, asset, timestamp, delete=None):
+    async def update_asset(self, asset: Asset):
         """ Update asset data.
 
         Args:
-            platform: Exchange platform name. e.g. binance/bitmex/okex
-            account: Account name. e.g. test@gmail.com
-            asset: Asset data, dict format. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-            timestamp: Millisecond timestamp.
-            delete: Currency name list for delete.
+            asset: Asset object.
 
         Returns:
             count: How many documents have been updated.
         """
         spec = {
-            "platform": platform,
-            "account": account,
-            "timestamp": timestamp
+            "platform": asset.platform,
+            "account": asset.account
         }
-        update_fields = {"$set": asset}
-        if delete:
-            d = {}
-            for key in delete:
-                d[key] = 1
-            update_fields["$unset"] = d
-        count = await self.update(spec, update_fields=update_fields, upsert=True)
+        update_fields = {"$set": {"timestamp": asset.timestamp, "assets": asset.assets}}
+        count = await self._db.update(spec, update_fields=update_fields, upsert=True)
         return count
 
     async def get_latest_asset(self, platform, account):
@@ -224,13 +210,13 @@ class AssetData(MongoDBBase):
             "create_time": 0,
             "update_time": 0
         }
-        asset = await self.find_one(spec, sort=_sort, fields=fields)
+        asset = await self._db.find_one(spec, sort=_sort, fields=fields)
         if asset:
             del asset["_id"]
         return asset
 
 
-class AssetSnapshotData(MongoDBBase):
+class AssetSnapshotData(AssetData):
     """ Save or fetch asset snapshot data via MongoDB.
 
     Data struct:
@@ -244,33 +230,8 @@ class AssetSnapshotData(MongoDBBase):
         }
     """
 
-    def __init__(self):
-        """Initialize object."""
-        self._db = "asset"  # db name
-        self._collection = "snapshot"  # collection name
-        super(AssetSnapshotData, self).__init__(self._db, self._collection)
-
-    async def create_new_asset(self, platform, account, asset, timestamp):
-        """ Insert asset snapshot data to db.
-
-        Args:
-            platform: Exchange platform name. e.g. binance/bitmex/okex
-            account: Account name. e.g. test@gmail.com
-            timestamp: Millisecond timestamp.
-            asset: Asset data, dict format. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-
-        Returns:
-            asset_id: Asset id, it's a MongoDB document _id.
-        """
-        d = {
-            "platform": platform,
-            "account": account,
-            "timestamp": timestamp
-        }
-        for key, value in asset.items():
-            d[key] = value
-        asset_id = await self.insert(d)
-        return asset_id
+    DB = "asset"  # db name
+    COLLECTION = "snapshot"  # collection name
 
     async def get_asset_snapshot(self, platform, account, start=None, end=None):
         """ Get asset snapshot data from db.
@@ -301,31 +262,11 @@ class AssetSnapshotData(MongoDBBase):
             "account": 0,
             "update_time": 0
         }
-        datas = await self.get_list(spec, fields=fields)
+        datas = await self._db.get_list(spec, fields=fields)
         return datas
 
-    async def get_latest_asset_snapshot(self, platform, account):
-        """ Get latest asset snapshot data.
 
-        Args:
-            platform: Exchange platform name. e.g. binance/bitmex/okex
-            account: Account name. e.g. test@gmail.com
-
-        Returns:
-            asset: Asset data, e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-        """
-        spec = {
-            "platform": platform,
-            "account": account
-        }
-        _sort = [("timestamp", -1)]
-        asset = await self.find_one(spec, sort=_sort)
-        if asset:
-            del asset["_id"]
-        return asset
-
-
-class OrderData(MongoDBBase):
+class OrderData:
     """ Save or fetch order data via MongoDB.
 
     Data struct:
@@ -353,7 +294,7 @@ class OrderData(MongoDBBase):
         """Initialize object."""
         self._db = "strategy"  # db name
         self._collection = "order"  # collection name
-        super(OrderData, self).__init__(self._db, self._collection)
+        self._db = MongoDBBase(self._db, self._collection)  # db instance
 
     async def create_new_order(self, order):
         """ Insert order data to db.
@@ -381,7 +322,7 @@ class OrderData(MongoDBBase):
             "ct": order.ctime,
             "ut": order.utime
         }
-        order_id = await self.insert(data)
+        order_id = await self._db.insert(data)
         return order_id
 
     async def get_order_by_no(self, platform, order_no):
@@ -398,7 +339,7 @@ class OrderData(MongoDBBase):
             "p": platform,
             "n": order_no
         }
-        data = await self.find_one(spec)
+        data = await self._db.find_one(spec)
         return data
 
     async def update_order_infos(self, order):
@@ -418,7 +359,7 @@ class OrderData(MongoDBBase):
             "s": order.status,
             "r": order.remain
         }
-        count = await self.update(spec, update_fields={"$set": update_fields})
+        count = await self._db.update(spec, update_fields={"$set": update_fields})
         return count
 
     async def get_latest_order(self, platform, symbol):
@@ -436,5 +377,5 @@ class OrderData(MongoDBBase):
             "S": symbol
         }
         _sort = [("ut", -1)]
-        data = await self.find_one(spec, sort=_sort)
+        data = await self._db.find_one(spec, sort=_sort)
         return data
