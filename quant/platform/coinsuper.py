@@ -308,8 +308,10 @@ class CoinsuperTrade:
             if self._init_success_callback:
                 SingleTask.run(self._init_success_callback, False, e)
             return
-        if order_nos:
-            success, error = await self._rest_api.get_order_list(order_nos)
+        while order_nos:
+            nos = order_nos[:50]
+            order_nos = order_nos[50:]
+            success, error = await self._rest_api.get_order_list(nos)
             if error:
                 e = Error("get order infos failed: {}".format(error))
                 logger.error(e, caller=self)
@@ -366,13 +368,15 @@ class CoinsuperTrade:
             order_nos, error = await self._rest_api.get_open_order_nos(self._raw_symbol)
             if error:
                 return False, error
-            success, error = await self._rest_api.revoke_orders(order_nos)
-            if error:
-                return False, error
-            if len(success["failResultList"]) > 0:
-                return False, success["failResultList"]
-            else:
-                return True, None
+            while order_nos:
+                nos = order_nos[:50]
+                order_nos = order_nos[50:]
+                success, error = await self._rest_api.revoke_orders(nos)
+                if error:
+                    return False, error
+                if len(success["failResultList"]) > 0:
+                    return False, success["failResultList"]
+            return True, None
 
         # 如果传入order_nos为一个委托单号，那么只撤销一个委托单
         if len(order_nos) == 1:
