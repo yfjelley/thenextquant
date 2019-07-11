@@ -1,11 +1,12 @@
 # -*- coding:utf-8 -*-
 
 """
-Binance Trade 模块
+Binance Trade module.
 https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
 
 Author: HuangTao
 Date:   2018/08/09
+Email:  huangtao@ifclover.com
 """
 
 import json
@@ -33,21 +34,26 @@ __all__ = ("BinanceRestAPI", "BinanceTrade", )
 
 
 class BinanceRestAPI:
-    """ Binance REST API 封装
+    """ Binance REST API client.
+
+    Attributes:
+        host: HTTP request host.
+        access_key: Account's ACCESS KEY.
+        secret_key Account's SECRET KEY.
     """
 
     def __init__(self, host, access_key, secret_key):
-        """ 初始化
-        @param host 请求的host
-        @param access_key 请求的access_key
-        @param secret_key 请求的secret_key
-        """
+        """initialize REST API client."""
         self._host = host
         self._access_key = access_key
         self._secret_key = secret_key
 
     async def get_user_account(self):
-        """ 获取账户信息
+        """ Get user account information.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         ts = tools.get_cur_timestamp_ms()
         params = {
@@ -57,19 +63,34 @@ class BinanceRestAPI:
         return success, error
 
     async def get_server_time(self):
-        """ 获取服务器时间
+        """ Get server time.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         success, error = await self.request("GET", "/api/v1/time")
         return success, error
 
     async def get_exchange_info(self):
-        """ 获取交易所信息
+        """ Get exchange information.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         success, error = await self.request("GET", "/api/v1/exchangeInfo")
         return success, error
 
     async def get_latest_ticker(self, symbol):
-        """ 获取交易对实时ticker行情
+        """ Get latest ticker.
+
+        Args:
+            symbol: Symbol name, e.g. BTCUSDT.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "symbol": symbol
@@ -78,9 +99,15 @@ class BinanceRestAPI:
         return success, error
 
     async def get_orderbook(self, symbol, limit=10):
-        """ 获取订单薄数据
-        @param symbol 交易对
-        @param limit 订单薄的档位数，默认为10，可选 5, 10, 20, 50, 100, 500, 1000
+        """ Get orderbook.
+
+        Args:
+            symbol: Symbol name, e.g. BTCUSDT.
+            limit: Number of results per request. (default 10)
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "symbol": symbol,
@@ -90,12 +117,16 @@ class BinanceRestAPI:
         return success, error
 
     async def create_order(self, action, symbol, price, quantity):
-        """ 创建订单
-        @param action 操作类型 BUY SELL
-        @param symbol 交易对
-        @param quantity 交易量
-        @param price 交易价格
-        * NOTE: 仅实现了限价单
+        """ Create an order.
+        Args:
+            action: Trade direction, BUY or SELL.
+            symbol: Symbol name, e.g. BTCUSDT.
+            price: Price of each contract.
+            quantity: The buying or selling quantity.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         info = {
             "symbol": symbol,
@@ -112,10 +143,15 @@ class BinanceRestAPI:
         return success, error
 
     async def revoke_order(self, symbol, order_id, client_order_id):
-        """ 撤销订单
-        @param symbol 交易对
-        @param order_id 订单id
-        @param client_order_id 创建订单返回的客户端信息
+        """ Cancelling an unfilled order.
+        Args:
+            symbol: Symbol name, e.g. BTCUSDT.
+            order_id: Order id.
+            client_order_id: Client order id.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "symbol": symbol,
@@ -127,10 +163,16 @@ class BinanceRestAPI:
         return success, error
 
     async def get_order_status(self, symbol, order_id, client_order_id):
-        """ 获取订单的状态
-        @param symbol 交易对
-        @param order_id 订单id
-        @param client_order_id 创建订单返回的客户端信息
+        """ Get order details by order id.
+
+        Args:
+            symbol: Symbol name, e.g. BTCUSDT.
+            order_id: Order id.
+            client_order_id: Client order id.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "symbol": symbol,
@@ -142,8 +184,13 @@ class BinanceRestAPI:
         return success, error
 
     async def get_all_orders(self, symbol):
-        """ 获取所有订单信息
-        @param symbol 交易对
+        """ Get all account orders; active, canceled, or filled.
+        Args:
+            symbol: Symbol name, e.g. BTCUSDT.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "symbol": symbol,
@@ -153,8 +200,13 @@ class BinanceRestAPI:
         return success, error
 
     async def get_open_orders(self, symbol):
-        """ 获取当前还未完全成交的订单信息
-        @param symbol 交易对
+        """ Get all open order information.
+        Args:
+            symbol: Symbol name, e.g. BTCUSDT.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "symbol": symbol,
@@ -164,15 +216,24 @@ class BinanceRestAPI:
         return success, error
 
     async def get_listen_key(self):
-        """ 获取一个新的用户数据流key
-        @return listen_key string wss监听用户数据的key
+        """ Get listen key, start a new user data stream
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         success, error = await self.request("POST", "/api/v1/userDataStream")
         return success, error
 
     async def put_listen_key(self, listen_key):
-        """ 保持listen key连接
-        @param listen_key string wss监听用户数据的key
+        """ Keepalive a user data stream to prevent a time out.
+
+        Args:
+            listen_key: Listen key.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "listenKey": listen_key
@@ -181,8 +242,14 @@ class BinanceRestAPI:
         return success, error
 
     async def delete_listen_key(self, listen_key):
-        """ 删除一个listen key
-        @param listen_key string wss监听用户数据的key
+        """ Delete a listen key.
+
+        Args:
+            listen_key: Listen key.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         params = {
             "listenKey": listen_key
@@ -191,13 +258,19 @@ class BinanceRestAPI:
         return success, error
 
     async def request(self, method, uri, params=None, body=None, headers=None, auth=False):
-        """ 发起请求
-        @param method 请求方法 GET POST DELETE PUT
-        @param uri 请求uri
-        @param params dict 请求query参数
-        @param body dict 请求body数据
-        @param headers 请求http头
-        @param auth boolean 是否需要加入权限校验
+        """ Do HTTP request.
+
+        Args:
+            method: HTTP request method. GET, POST, DELETE, PUT.
+            uri: HTTP request uri.
+            params: HTTP query params.
+            body:   HTTP request body.
+            headers: HTTP request headers.
+            auth: If this request requires authentication.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         url = urljoin(self._host, uri)
         data = {}
@@ -224,12 +297,29 @@ class BinanceRestAPI:
 
 
 class BinanceTrade(Websocket):
-    """ binance用户数据流
+    """ Binance Trade module. You can initialize trade object with some attributes in kwargs.
+
+    Attributes:
+        account: Account name for this trade exchange.
+        strategy: What's name would you want to created for you strategy.
+        symbol: Symbol name for your trade.
+        host: HTTP request host. (default "https://api.binance.com")
+        wss: Websocket address. (default "wss://stream.binance.com:9443")
+        access_key: Account's ACCESS KEY.
+        secret_key Account's SECRET KEY.
+        asset_update_callback: You can use this param to specific a async callback function when you initializing Trade
+            object. `asset_update_callback` is like `async def on_asset_update_callback(asset: Asset): pass` and this
+            callback function will be executed asynchronous when received AssetEvent.
+        order_update_callback: You can use this param to specific a async callback function when you initializing Trade
+            object. `order_update_callback` is like `async def on_order_update_callback(order: Order): pass` and this
+            callback function will be executed asynchronous when some order state updated.
+        init_success_callback: You can use this param to specific a async callback function when you initializing Trade
+            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error): pass`
+            and this callback function will be executed asynchronous after Trade module object initialized successfully.
     """
 
     def __init__(self, **kwargs):
-        """ 初始化
-        """
+        """Initialize Trade module."""
         e = None
         if not kwargs.get("account"):
             e = Error("param account miss")
@@ -265,22 +355,23 @@ class BinanceTrade(Websocket):
 
         super(BinanceTrade, self).__init__(self._wss)
 
-        self._raw_symbol = self._symbol.replace("/", "")  # 原始交易对
+        self._raw_symbol = self._symbol.replace("/", "")  # Row symbol name, same as Binance Exchange.
 
-        self._listen_key = None  # websocket连接鉴权使用
-        self._assets = {}  # 资产 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-        self._orders = {}  # 订单
+        self._listen_key = None  # Listen key for Websocket authentication.
+        self._assets = {}  # Asset data. e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+        self._orders = {}  # Order data. e.g. {order_no: order, ... }
 
-        # 初始化 REST API 对象
+        # Initialize our REST API client.
         self._rest_api = BinanceRestAPI(self._host, self._access_key, self._secret_key)
 
-        # 初始化资产订阅
+        # Subscribe our AssetEvent.
         if self._asset_update_callback:
             AssetSubscribe(self._platform, self._account, self.on_event_asset_update)
 
-        # 30分钟重置一下listen key
+        # Create a loop run task to reset listen key every 30 minutes.
         LoopRunTask.register(self._reset_listen_key, 60 * 30)
-        # 获取listen key
+
+        # Create a coroutine to initialize Websocket connection.
         SingleTask.run(self._init_websocket)
 
     @property
@@ -296,9 +387,9 @@ class BinanceTrade(Websocket):
         return self._rest_api
 
     async def _init_websocket(self):
-        """ 初始化websocket
+        """ Initialize Websocket connection.
         """
-        # 获取listen key
+        # Get listen key first.
         success, error = await self._rest_api.get_listen_key()
         if error:
             e = Error("get listen key failed: {}".format(error))
@@ -312,7 +403,7 @@ class BinanceTrade(Websocket):
         self.initialize()
 
     async def _reset_listen_key(self, *args, **kwargs):
-        """ 重置listen key
+        """ Reset listen key.
         """
         if not self._listen_key:
             logger.error("listen key not initialized!", caller=self)
@@ -321,7 +412,7 @@ class BinanceTrade(Websocket):
         logger.info("reset listen key success!", caller=self)
 
     async def connected_callback(self):
-        """ 建立连接之后，获取当前所有未完全成交的订单
+        """ After websocket connection created successfully, pull back all open order information.
         """
         logger.info("Websocket connection authorized successfully.", caller=self)
         order_infos, error = await self._rest_api.get_open_orders(self._raw_symbol)
@@ -332,17 +423,17 @@ class BinanceTrade(Websocket):
             return
         for order_info in order_infos:
             order_no = "{}_{}".format(order_info["orderId"], order_info["clientOrderId"])
-            if order_info["status"] == "NEW":  # 部分成交
+            if order_info["status"] == "NEW":
                 status = ORDER_STATUS_SUBMITTED
-            elif order_info["status"] == "PARTIALLY_FILLED":  # 部分成交
+            elif order_info["status"] == "PARTIALLY_FILLED":
                 status = ORDER_STATUS_PARTIAL_FILLED
-            elif order_info["status"] == "FILLED":  # 完全成交
+            elif order_info["status"] == "FILLED":
                 status = ORDER_STATUS_FILLED
-            elif order_info["status"] == "CANCELED":  # 取消
+            elif order_info["status"] == "CANCELED":
                 status = ORDER_STATUS_CANCELED
-            elif order_info["status"] == "REJECTED":  # 拒绝
+            elif order_info["status"] == "REJECTED":
                 status = ORDER_STATUS_FAILED
-            elif order_info["status"] == "EXPIRED":  # 过期
+            elif order_info["status"] == "EXPIRED":
                 status = ORDER_STATUS_FAILED
             else:
                 logger.warn("unknown status:", order_info, caller=self)
@@ -372,11 +463,17 @@ class BinanceTrade(Websocket):
             SingleTask.run(self._init_success_callback, True, None)
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT):
-        """ 创建订单
-        @param action 交易方向 BUY/SELL
-        @param price 委托价格
-        @param quantity 委托数量
-        @param order_type 委托类型 LIMIT / MARKET
+        """ Create an order.
+
+        Args:
+            action: Trade direction, BUY or SELL.
+            price: Price of each contract.
+            quantity: The buying or selling quantity.
+            order_type: Limit order or market order, LIMIT or MARKET.
+
+        Returns:
+            order_no: Order ID if created successfully, otherwise it's None.
+            error: Error information, otherwise it's None.
         """
         price = tools.float_to_str(price)
         quantity = tools.float_to_str(quantity)
@@ -387,10 +484,17 @@ class BinanceTrade(Websocket):
         return order_no, None
 
     async def revoke_order(self, *order_nos):
-        """ 撤销订单
-        @param order_nos 订单号列表，可传入任意多个，如果不传入，那么就撤销所有订单
+        """ Revoke (an) order(s).
+
+        Args:
+            order_nos: Order id list, you can set this param to 0 or multiple items. If you set 0 param, you can cancel
+                all orders for this symbol(initialized in Trade object). If you set 1 param, you can cancel an order.
+                If you set multiple param, you can cancel multiple orders. Do not set param length more than 100.
+
+        Returns:
+            Success or error, see bellow.
         """
-        # 如果传入order_nos为空，即撤销全部委托单
+        # If len(order_nos) == 0, you will cancel all orders for this symbol(initialized in Trade object).
         if len(order_nos) == 0:
             order_infos, error = await self._rest_api.get_open_orders(self._raw_symbol)
             if error:
@@ -402,7 +506,7 @@ class BinanceTrade(Websocket):
                     return False, error
             return True, None
 
-        # 如果传入order_nos为一个委托单号，那么只撤销一个委托单
+        # If len(order_nos) == 1, you will cancel an order.
         if len(order_nos) == 1:
             order_id, client_order_id = order_nos[0].split("_")
             success, error = await self._rest_api.revoke_order(self._raw_symbol, order_id, client_order_id)
@@ -411,7 +515,7 @@ class BinanceTrade(Websocket):
             else:
                 return order_nos[0], None
 
-        # 如果传入order_nos数量大于1，那么就批量撤销传入的委托单
+        # If len(order_nos) > 1, you will cancel multiple orders.
         if len(order_nos) > 1:
             success, error = [], []
             for order_no in order_nos:
@@ -424,7 +528,7 @@ class BinanceTrade(Websocket):
             return success, error
 
     async def get_open_order_nos(self):
-        """ 获取未完全成交订单号列表
+        """ Get open order no list.
         """
         success, error = await self._rest_api.get_open_orders(self._raw_symbol)
         if error:
@@ -438,25 +542,28 @@ class BinanceTrade(Websocket):
 
     @async_method_locker("process.locker")
     async def process(self, msg):
-        """ 处理websocket上接收到的消息
+        """ Process message that received from Websocket connection.
+
+        Args:
+            msg: message received from Websocket connection.
         """
         logger.debug("msg:", json.dumps(msg), caller=self)
         e = msg.get("e")
-        if e == "executionReport":  # 订单更新
+        if e == "executionReport":  # Order update.
             if msg["s"] != self._raw_symbol:
                 return
             order_no = "{}_{}".format(msg["i"], msg["c"])
-            if msg["X"] == "NEW":  # 部分成交
+            if msg["X"] == "NEW":
                 status = ORDER_STATUS_SUBMITTED
-            elif msg["X"] == "PARTIALLY_FILLED":  # 部分成交
+            elif msg["X"] == "PARTIALLY_FILLED":
                 status = ORDER_STATUS_PARTIAL_FILLED
-            elif msg["X"] == "FILLED":  # 完全成交
+            elif msg["X"] == "FILLED":
                 status = ORDER_STATUS_FILLED
-            elif msg["X"] == "CANCELED":  # 取消
+            elif msg["X"] == "CANCELED":
                 status = ORDER_STATUS_CANCELED
-            elif msg["X"] == "REJECTED":  # 拒绝
+            elif msg["X"] == "REJECTED":
                 status = ORDER_STATUS_FAILED
-            elif msg["X"] == "EXPIRED":  # 过期
+            elif msg["X"] == "EXPIRED":
                 status = ORDER_STATUS_FAILED
             else:
                 logger.warn("unknown status:", msg, caller=self)
@@ -484,7 +591,10 @@ class BinanceTrade(Websocket):
                 SingleTask.run(self._order_update_callback, copy.copy(order))
 
     async def on_event_asset_update(self, asset: Asset):
-        """ 资产数据更新回调
+        """ Asset data update callback.
+
+        Args:
+            asset: Asset object.
         """
         self._assets = asset
         SingleTask.run(self._asset_update_callback, asset)
