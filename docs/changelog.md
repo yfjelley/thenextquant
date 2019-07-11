@@ -1,6 +1,13 @@
 # Change Logs
 
 
+### v0.1.3
+
+*Date: 2019/07/11*  
+*Summary:*
+- Fix bug: order callback filter by symbol.
+
+
 ### v0.1.2
 
 *Date: 2019/07/04*  
