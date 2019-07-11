@@ -443,6 +443,8 @@ class BinanceTrade(Websocket):
         logger.debug("msg:", json.dumps(msg), caller=self)
         e = msg.get("e")
         if e == "executionReport":  # 订单更新
+            if msg["s"] != self._raw_symbol:
+                return
             order_no = "{}_{}".format(msg["i"], msg["c"])
             if msg["X"] == "NEW":  # 部分成交
                 status = ORDER_STATUS_SUBMITTED
