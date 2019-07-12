@@ -501,6 +501,7 @@ class KrakenTrade:
         """ Update order object.
 
         Args:
+            order_no: Order ID.
             order_info: Order information.
         """
         if not order_info:
