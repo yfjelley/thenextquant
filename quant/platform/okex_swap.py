@@ -44,8 +44,8 @@ class OKExSwapRestAPI:
     Attributes:
         host: HTTP request host.
         access_key: Account's ACCESS KEY.
-        secret_key Account's SECRET KEY.
-        passphrase API KEY Passphrase.
+        secret_key: Account's SECRET KEY.
+        passphrase: API KEY Passphrase.
     """
 
     def __init__(self, host, access_key, secret_key, passphrase):
@@ -256,8 +256,7 @@ class OKExSwapTrade(Websocket):
     """
 
     def __init__(self, **kwargs):
-        """ 初始化
-        """
+        """Initialize."""
         e = None
         if not kwargs.get("account"):
             e = Error("param account miss")

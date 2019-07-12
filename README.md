@@ -85,6 +85,7 @@ python src/main.py config.json
     - [Bitmex 合约](example/bitmex)
     - [Huobi(火币) 币币](example/huobi)
     - [Coinsuper(币成) 币币](example/coinsuper)
+    - [Kraken 币币/杠杆](example/kraken) 
     - To be continued ...
 
 - 其它

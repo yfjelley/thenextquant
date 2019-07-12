@@ -12,7 +12,7 @@ from quant.error import Error
 from quant.utils import logger
 from quant.tasks import SingleTask
 from quant.order import ORDER_TYPE_LIMIT
-from quant.const import OKEX, OKEX_MARGIN, OKEX_FUTURE, OKEX_SWAP, DERIBIT, BITMEX, BINANCE, HUOBI, COINSUPER
+from quant.const import OKEX, OKEX_MARGIN, OKEX_FUTURE, OKEX_SWAP, DERIBIT, BITMEX, BINANCE, HUOBI, COINSUPER, KRAKEN
 
 
 class Trade:
@@ -78,6 +78,8 @@ class Trade:
             from quant.platform.huobi import HuobiTrade as T
         elif platform == COINSUPER:
             from quant.platform.coinsuper import CoinsuperTrade as T
+        elif platform == KRAKEN:
+            from quant.platform.kraken import KrakenTrade as T
         else:
             logger.error("platform error:", platform, caller=self)
             if init_success_callback:
