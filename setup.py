@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
     name="thenextquant",
-    version="0.1.3",
+    version="0.1.4",
     packages=["quant",
               "quant.utils",
               "quant.platform",
