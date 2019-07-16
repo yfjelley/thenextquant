@@ -86,6 +86,7 @@ python src/main.py config.json
     - [Huobi(火币) 币币](example/huobi)
     - [Coinsuper(币成) 币币](example/coinsuper)
     - [Kraken 币币/杠杆](example/kraken) 
+    - [Gate.io 币币](example/gate)
     - To be continued ...
 
 - 其它

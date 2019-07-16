@@ -1,6 +1,15 @@
 # Change Logs
 
 
+### v0.1.4
+
+*Date: 2019/07/16*  
+*Summary:*
+- Add [Gate.io](../example/gate) Trade module.
+- Add [Kraken](../example/kraken) Trade module.
+- Fix bug for [Coinsuper](../example/coinsuper) : get order infos maybe more than 50 length.
+
+
 ### v0.1.3
 
 *Date: 2019/07/11*  
