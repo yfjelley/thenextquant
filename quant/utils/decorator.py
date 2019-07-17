@@ -1,25 +1,32 @@
 # -*- coding:utf-8 -*-
 
 """
-装饰器
+Decorator.
 
 Author: HuangTao
 Date:   2018/08/03
+Email:  Huangtao@ifclover.com
 """
 
 import asyncio
 import functools
 
 
-# 协程间加锁，锁名对应的锁对象 {"locker_name": locker}
+# Coroutine lockers. e.g. {"locker_name": locker}
 METHOD_LOCKERS = {}
 
 
 def async_method_locker(name, wait=True):
-    """ 异步方法加锁，用于多个协程执行同一个单列的函数时候，避免共享内存相互修改
-    @param name 锁名称
-    @param wait 如果被锁是否等待，True等待执行完成再返回，False不等待直接返回
-    * NOTE: 此装饰器需要加到async异步方法上
+    """ In order to share memory between any asynchronous coroutine methods, we should use locker to lock our method,
+        so that we can avoid some un-prediction actions.
+
+    Args:
+        name: Locker name.
+        wait: If waiting to be executed when the locker is locked? if True, waiting until to be executed, else return
+            immediately (do not execute).
+
+    NOTE:
+        This decorator must to be used on `async method`.
     """
     assert isinstance(name, str)
 

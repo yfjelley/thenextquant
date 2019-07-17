@@ -1,10 +1,12 @@
 # -*- coding:utf-8 -*-
 
 """
-打电话接口
+Aliyun Phone Call API.
+https://dyvms.console.aliyun.com/dyvms.htm
 
 Author: HuangTao
 Date:   2019/03/22
+Email:  huangtao@ifclover.com
 """
 
 import hmac
@@ -13,24 +15,24 @@ import hashlib
 from urllib import parse
 
 from quant.utils import tools
-from quant.utils import logger
 from quant.utils.http_client import AsyncHttpRequests
 
 
 class AliyunPhoneCall:
-    """ 阿里云语音通知
+    """ Aliyun Phone Call API.
+
+    Attributes:
+        access_key: Aliyun Access Key.
+        secret_key: Aliyun Secret Key.
+        _from: Call out phone, eg: 08177112233
+        to: Which phone to be called, eg: 13123456789
+        code: Phone ring code, e.g. `64096325-d22e-4cf8-9f52-abc12345.wav`
+        region_id: Which region to be used, default is `cn-hangzhou`.
     """
 
     @classmethod
-    async def call_phone(cls, access_key, secret_key, from_, to, code, region_id="cn-hangzhou"):
-        """ 打电话
-        @param access_key 公钥
-        @param secret_key 私钥
-        @param from_ 播出去的号码
-        @param to 拨打的号码 如：15300000000
-        @param code 语音文件id
-        @param region_id 使用阿里云语音服务区，默认使用 cn-hangzhou
-        """
+    async def call_phone(cls, access_key, secret_key, _from, to, code, region_id="cn-hangzhou"):
+        """ Initialize. """
         def percent_encode(s):
             res = parse.quote_plus(s.encode("utf8"))
             res = res.replace("+", "%20").replace("*", "%2A").replace("%7E", "~")
@@ -45,7 +47,7 @@ class AliyunPhoneCall:
             "VoiceCode": code,
             "OutId": out_id,
             "CalledNumber": to,
-            "CalledShowNumber": from_,
+            "CalledShowNumber": _from,
             "Version": "2017-05-25",
             "Action": "SingleCallByVoice",
             "Format": "JSON",
@@ -59,11 +61,7 @@ class AliyunPhoneCall:
         }
         query = "&".join(["{}={}".format(percent_encode(k), percent_encode(params[k])) for k in sorted(params.keys())])
         str_to_sign = "GET&%2F&" + percent_encode(query)
-        print("data:", str_to_sign)
         h = hmac.new(bytes(secret_key + "&", "utf8"), bytes(str_to_sign, "utf8"), digestmod=hashlib.sha1)
         signature = base64.b64encode(h.digest()).decode()
         params["Signature"] = signature
-
-        logger.info("url:", url, "params:", params, caller=cls)
-        result = await AsyncHttpRequests.fetch("GET", url, params=params)
-        logger.info("url:", url, "result:", result, caller=cls)
+        await AsyncHttpRequests.fetch("GET", url, params=params)

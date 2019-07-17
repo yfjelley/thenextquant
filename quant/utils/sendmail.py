@@ -1,8 +1,14 @@
 # -*- coding:utf-8 -*-
 
+"""
+Send email.
+
+Author: HuangTao
+Date:   2018/12/04
+Email:  huangtao@ifclover.com
+"""
 
 import email
-import asyncio
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -12,21 +18,22 @@ from quant.utils import logger
 
 
 class SendEmail:
-    """ 发送邮件
+    """ Send email.
+
+    Attributes:
+        host: Mail server host.
+        port: Mail server port.
+        username: Email username, e.g. test@gmail.com
+        password: Email password.
+        to_emails: Email list, which mails to be send.
+        subject: Email subject(title).
+        content: Email content(body).
+        timeout: Send timeout time(seconds), default is 30s.
+        tls: If use TLS, default is True.
     """
 
     def __init__(self, host, port, username, password, to_emails, subject, content, timeout=30, tls=True):
-        """ 初始化
-        @param host 邮件服务端主机
-        @param port 邮件服务器端口
-        @param username 用户名
-        @param password 密码
-        @param to_emails 发送到邮箱列表
-        @param title 标题
-        @param content 内容
-        @param timeout 超时时间，默认30秒
-        @param tls 是否使用TLS，默认使用
-        """
+        """ Initialize. """
         self._host = host
         self._port = port
         self._username = username
@@ -38,16 +45,16 @@ class SendEmail:
         self._tls = tls
 
     async def send(self):
-        """ 发送邮件
+        """ Send a email.
         """
-        message = MIMEMultipart('related')
-        message['Subject'] = self._subject
-        message['From'] = self._username
-        message['To'] = ",".join(self._to_emails)
-        message['Date'] = email.utils.formatdate()
-        message.preamble = 'This is a multi-part message in MIME format.'
-        ma = MIMEMultipart('alternative')
-        mt = MIMEText(self._content, 'plain', 'GB2312')
+        message = MIMEMultipart("related")
+        message["Subject"] = self._subject
+        message["From"] = self._username
+        message["To"] = ",".join(self._to_emails)
+        message["Date"] = email.utils.formatdate()
+        message.preamble = "This is a multi-part message in MIME format."
+        ma = MIMEMultipart("alternative")
+        mt = MIMEText(self._content, "plain", "GB2312")
         ma.attach(mt)
         message.attach(ma)
 
@@ -55,19 +62,20 @@ class SendEmail:
         await smtp.connect()
         await smtp.login(self._username, self._password)
         await smtp.send_message(message)
-        logger.info('send email success! FROM:', self._username, 'TO:', self._to_emails, 'CONTENT:', self._content,
+        logger.info("send email success! FROM:", self._username, "TO:", self._to_emails, "CONTENT:", self._content,
                     caller=self)
 
 
-if __name__ == "__main__":
-    h = 'hwhzsmtp.qiye.163.com'
-    p = 994
-    u = 'huangtao@ifclover.com'
-    pw = '123456'
-    t = ['huangtao@ifclover.com']
-    s = 'Test Send Email 测试'
-    c = "Just a test. \n 测试。"
-
-    sender = SendEmail(h, p, u, pw, t, s, c)
-    asyncio.get_event_loop().create_task(sender.send())
-    asyncio.get_event_loop().run_forever()
+# if __name__ == "__main__":
+#     h = "hwhzsmtp.qiye.163.com"
+#     p = 994
+#     u = "huangtao@ifclover.com"
+#     pw = "123456"
+#     t = ["huangtao@ifclover.com"]
+#     s = "Test Send Email 测试"
+#     c = "Just a test. \n 测试。"
+#
+#     sender = SendEmail(h, p, u, pw, t, s, c)
+#     import asyncio
+#     asyncio.get_event_loop().create_task(sender.send())
+#     asyncio.get_event_loop().run_forever()
