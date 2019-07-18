@@ -8,12 +8,11 @@ Date:   2019/04/21
 Email:  huangtao@ifclover.com
 """
 
+from quant import const
 from quant.error import Error
 from quant.utils import logger
 from quant.tasks import SingleTask
 from quant.order import ORDER_TYPE_LIMIT
-from quant.const import OKEX, OKEX_MARGIN, OKEX_FUTURE, OKEX_SWAP, DERIBIT, BITMEX, BINANCE, HUOBI, COINSUPER, KRAKEN
-from quant.const import GATE, COINSUPER_PRE
 
 
 class Trade:
@@ -61,29 +60,29 @@ class Trade:
         kwargs["position_update_callback"] = position_update_callback
         kwargs["init_success_callback"] = init_success_callback
 
-        if platform == OKEX:
+        if platform == const.OKEX:
             from quant.platform.okex import OKExTrade as T
-        elif platform == OKEX_MARGIN:
+        elif platform == const.OKEX_MARGIN:
             from quant.platform.okex_margin import OKExMarginTrade as T
-        elif platform == OKEX_FUTURE:
+        elif platform == const.OKEX_FUTURE:
             from quant.platform.okex_future import OKExFutureTrade as T
-        elif platform == OKEX_SWAP:
+        elif platform == const.OKEX_SWAP:
             from quant.platform.okex_swap import OKExSwapTrade as T
-        elif platform == DERIBIT:
+        elif platform == const.DERIBIT:
             from quant.platform.deribit import DeribitTrade as T
-        elif platform == BITMEX:
+        elif platform == const.BITMEX:
             from quant.platform.bitmex import BitmexTrade as T
-        elif platform == BINANCE:
+        elif platform == const.BINANCE:
             from quant.platform.binance import BinanceTrade as T
-        elif platform == HUOBI:
+        elif platform == const.HUOBI:
             from quant.platform.huobi import HuobiTrade as T
-        elif platform == COINSUPER:
+        elif platform == const.COINSUPER:
             from quant.platform.coinsuper import CoinsuperTrade as T
-        elif platform == COINSUPER_PRE:
+        elif platform == const.COINSUPER_PRE:
             from quant.platform.coinsuper_pre import CoinsuperPreTrade as T
-        elif platform == KRAKEN:
+        elif platform == const.KRAKEN:
             from quant.platform.kraken import KrakenTrade as T
-        elif platform == GATE:
+        elif platform == const.GATE:
             from quant.platform.gate import GateTrade as T
         else:
             logger.error("platform error:", platform, caller=self)
