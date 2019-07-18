@@ -26,6 +26,7 @@ KRAKEN = "kraken"  # Kraken https://www.kraken.com
 BITSTAMP = "bitstamp"
 GEMINI = "gemini"
 COINSUPER = "coinsuper"  # Coinsuper https://www.coinsuper.com/
+COINSUPER_PRE = "coinsuper_pre"  # Coinsuper Premium https://premium.coinsuper.com
 GATE = "gate"  # Gate.io https://gateio.news/
 
 
