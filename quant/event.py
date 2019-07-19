@@ -23,6 +23,8 @@ from quant.tasks import LoopRunTask, SingleTask
 from quant.utils.decorator import async_method_locker
 from quant.market import Orderbook, Trade, Kline
 from quant.asset import Asset
+from quant.order import Order
+from quant.position import Position
 
 
 __all__ = ("EventCenter", "EventConfig", "EventHeartbeat", "EventAsset", "EventOrder", "EventKline", "EventOrderbook",
@@ -115,14 +117,15 @@ class Event:
         from quant.quant import quant
         SingleTask.run(quant.event_center.publish, self)
 
-    async def callback(self, exchange, routing_key, body):
+    async def callback(self, channel, body, envelope, properties):
         """ 事件回调
-        @param exchange 事件被投放的RabbitMQ交换机
-        @param routing_key 路由规则
-        @param body 从RabbitMQ接收到的bytes类型数据
+        @param channel 消息队列通道
+        @param body 接收到的消息
+        @param envelope 路由规则
+        @param properties 消息属性
         """
-        self._exchange = exchange
-        self._routing_key = routing_key
+        self._exchange = envelope.exchange_name
+        self._routing_key = envelope.routing_key
         self.loads(body)
         o = self.parse()
         await self._callback(o)
@@ -227,30 +230,36 @@ class EventAsset(Event):
 
 
 class EventOrder(Event):
-    """ 委托单事件
+    """ Order event.
+
+    Attributes:
+        platform: Exchange platform name, e.g. binance/bitmex.
+        account: Trading account name, e.g. test@gmail.com.
+        strategy: Strategy name, e.g. my_test_strategy.
+        order_no: order id.
+        symbol: Trading pair name, e.g. ETH/BTC.
+        action: Trading side, BUY/SELL.
+        price: Order price.
+        quantity: Order quantity.
+        remain: Remain quantity that not filled.
+        status: Order status.
+        avg_price: Average price that filled.
+        order_type: Order type, only for future order.
+        ctime: Order create time, microsecond.
+        utime: Order update time, microsecond.
+
     * NOTE:
-        发布：策略服务
-        订阅：业务服务
+        Publisher: Strategy Server.
+        Subscriber: Any Servers who need.
     """
 
     def __init__(self, platform=None, account=None, strategy=None, order_no=None, symbol=None, action=None, price=None,
-                 quantity=None, status=None, order_type=None, timestamp=None):
-        """ 初始化
-        @param platform 交易平台名称
-        @param account 交易账户
-        @param strategy 策略名
-        @param order_no 订单号
-        @param symbol 交易对
-        @param action 操作类型
-        @param price 限价单价格
-        @param quantity 限价单数量
-        @param status 订单状态
-        @param order_type 订单类型
-        @param timestamp 时间戳(毫秒)
-        """
+                 quantity=None, remain=None, status=None, avg_price=None, order_type=None, trade_type=None, ctime=None,
+                 utime=None):
+        """Initialize."""
         name = "EVENT_ORDER"
         exchange = "Order"
-        routing_key = "{platform}.{account}.{symbol}".format(platform=platform, account=account, symbol=symbol)
+        routing_key = "{platform}.{account}.{strategy}".format(platform=platform, account=account, strategy=strategy)
         queue = "{server_id}.{exchange}.{routing_key}".format(server_id=config.server_id,
                                                               exchange=exchange,
                                                               routing_key=routing_key)
@@ -259,20 +268,25 @@ class EventOrder(Event):
             "account": account,
             "strategy": strategy,
             "order_no": order_no,
-            "symbol": symbol,
             "action": action,
+            "order_type": order_type,
+            "symbol": symbol,
             "price": price,
             "quantity": quantity,
+            "remain": remain,
             "status": status,
-            "order_type": order_type,
-            "timestamp": timestamp
+            "avg_price": avg_price,
+            "trade_type": trade_type,
+            "ctime": ctime,
+            "utime": utime
         }
         super(EventOrder, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
-        """ 解析self._data数据
+        """ Parse self._data to Order object.
         """
-        pass
+        order = Order(**self.data)
+        return order
 
 
 class EventKline(Event):
@@ -499,12 +513,12 @@ class EventCenter:
             queue_name = result["queue"]
         await self._channel.queue_bind(queue_name=queue_name, exchange_name=event.exchange,
                                        routing_key=event.routing_key)
-        await self._channel.basic_qos(prefetch_count=event.prefetch_count)  # 消息窗口大小，越大，消息推送越快，但也需要处理越快
+        await self._channel.basic_qos(prefetch_count=event.prefetch_count)
         if callback:
             if multi:
                 # 消费队列，routing_key为批量匹配，无需ack
                 await self._channel.basic_consume(callback=callback, queue_name=queue_name, no_ack=True)
-                logger.info("multi message queue:", queue_name, "callback:", callback, caller=self)
+                logger.info("multi message queue:", queue_name, caller=self)
             else:
                 # 消费队列，routing_key唯一确定，需要ack确定
                 await self._channel.basic_consume(self._on_consume_event_msg, queue_name=queue_name)
@@ -525,7 +539,7 @@ class EventCenter:
             # 执行事件回调函数
             funcs = self._event_handler[key]
             for func in funcs:
-                SingleTask.run(func, envelope.exchange_name, envelope.routing_key, body)
+                SingleTask.run(func, channel, body, envelope, properties)
         except:
             logger.error("event handle error! body:", body, caller=self)
             return

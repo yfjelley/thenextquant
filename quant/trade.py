@@ -13,6 +13,9 @@ from quant.error import Error
 from quant.utils import logger
 from quant.tasks import SingleTask
 from quant.order import ORDER_TYPE_LIMIT
+from quant.order import Order
+from quant.position import Position
+from quant.event import EventOrder
 
 
 class Trade:
@@ -56,9 +59,13 @@ class Trade:
         kwargs["secret_key"] = secret_key
         kwargs["passphrase"] = passphrase
         kwargs["asset_update_callback"] = asset_update_callback
-        kwargs["order_update_callback"] = order_update_callback
-        kwargs["position_update_callback"] = position_update_callback
-        kwargs["init_success_callback"] = init_success_callback
+        kwargs["order_update_callback"] = self._on_order_update_callback
+        kwargs["position_update_callback"] = self._on_position_update_callback
+        kwargs["init_success_callback"] = self._on_init_success_callback
+
+        self._order_update_callback = order_update_callback
+        self._position_update_callback = position_update_callback
+        self._init_success_callback = init_success_callback
 
         if platform == const.OKEX:
             from quant.platform.okex import OKExTrade as T
@@ -86,9 +93,8 @@ class Trade:
             from quant.platform.gate import GateTrade as T
         else:
             logger.error("platform error:", platform, caller=self)
-            if init_success_callback:
-                e = Error("platform error")
-                SingleTask.run(init_success_callback, False, e)
+            e = Error("platform error")
+            SingleTask.run(self._init_success_callback, False, e)
             return
         kwargs.pop("platform")
         self._t = T(**kwargs)
@@ -152,3 +158,49 @@ class Trade:
         """
         result, error = await self._t.get_open_order_nos()
         return result, error
+
+    async def _on_order_update_callback(self, order: Order):
+        """ Order information update callback.
+
+        Args:
+            order: Order object.
+        """
+        o = {
+            "platform": order.platform,
+            "account": order.account,
+            "strategy": order.strategy,
+            "order_no": order.order_no,
+            "action": order.action,
+            "order_type": order.order_type,
+            "symbol": order.symbol,
+            "price": order.price,
+            "quantity": order.quantity,
+            "remain": order.remain,
+            "status": order.status,
+            "avg_price": order.avg_price,
+            "trade_type": order.trade_type,
+            "ctime": order.ctime,
+            "utime": order.utime
+        }
+        EventOrder(**o).publish()
+        if self._order_update_callback:
+            SingleTask.run(self._order_update_callback, order)
+
+    async def _on_position_update_callback(self, position: Position):
+        """ Position information update callback.
+
+        Args:
+            position: Position object.
+        """
+        if self._position_update_callback:
+            SingleTask.run(self._position_update_callback, position)
+
+    async def _on_init_success_callback(self, success: bool, error: Error):
+        """ Callback function when initialize Trade module finished.
+
+        Args:
+            success: `True` if initialize Trade module success, otherwise `False`.
+            error: `Error object` if initialize Trade module failed, otherwise `None`.
+        """
+        if self._init_success_callback:
+            await self._init_success_callback(success, error)

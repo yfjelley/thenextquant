@@ -1,61 +1,79 @@
 # -*- coding:utf-8 -*-
 
 """
-订单
+Order object.
 
 Author: HuangTao
 Date:   2018/05/14
+Email:  huangtao@ifclover.com
 """
 
 from quant.utils import tools
 
 
-# 订单类型
-ORDER_TYPE_LIMIT = "LIMIT"  # 限价单
-ORDER_TYPE_MARKET = "MARKET"  # 市价单
+# Order type.
+ORDER_TYPE_LIMIT = "LIMIT"  # Limit order.
+ORDER_TYPE_MARKET = "MARKET"  # Market order.
 
-# 订单操作 买/卖
-ORDER_ACTION_BUY = "BUY"  # 买
-ORDER_ACTION_SELL = "SELL"  # 卖
+# Order direction.
+ORDER_ACTION_BUY = "BUY"  # Buy
+ORDER_ACTION_SELL = "SELL"  # Sell
 
-# 订单状态
-ORDER_STATUS_NONE = "NONE"  # 新创建的订单，无状态
-ORDER_STATUS_SUBMITTED = "SUBMITTED"  # 已提交
-ORDER_STATUS_PARTIAL_FILLED = "PARTIAL-FILLED"  # 部分成交
-ORDER_STATUS_FILLED = "FILLED"  # 完全成交
-ORDER_STATUS_CANCELED = "CANCELED"  # 取消
-ORDER_STATUS_FAILED = "FAILED"  # 失败
+# Order status.
+ORDER_STATUS_NONE = "NONE"  # New created order, no status.
+ORDER_STATUS_SUBMITTED = "SUBMITTED"  # The order that submitted to server successfully.
+ORDER_STATUS_PARTIAL_FILLED = "PARTIAL-FILLED"  # The order that filled partially.
+ORDER_STATUS_FILLED = "FILLED"  # The order that filled fully.
+ORDER_STATUS_CANCELED = "CANCELED"  # The order that canceled.
+ORDER_STATUS_FAILED = "FAILED"  # The order that failed.
 
-# 合约订单类型
-TRADE_TYPE_NONE = 0  # 未知订单类型，比如订单不是由 thenextquant 框架创建，且某些平台的订单不能判断订单类型
-TRADE_TYPE_BUY_OPEN = 1  # 买入开多 action=BUY, quantity>0
-TRADE_TYPE_SELL_OPEN = 2  # 卖出开空 action=SELL, quantity<0
-TRADE_TYPE_SELL_CLOSE = 3  # 卖出平多 action=SELL, quantity>0
-TRADE_TYPE_BUY_CLOSE = 4  # 买入平空 action=BUY, quantity<0
+# Future order trade type.
+TRADE_TYPE_NONE = 0  # Unknown type, some Exchange's order information couldn't known the type of trade.
+TRADE_TYPE_BUY_OPEN = 1  # Buy open, action = BUY & quantity > 0.
+TRADE_TYPE_SELL_OPEN = 2  # Sell open, action = SELL & quantity < 0.
+TRADE_TYPE_SELL_CLOSE = 3  # Sell close, action = SELL & quantity > 0.
+TRADE_TYPE_BUY_CLOSE = 4  # Buy close, action = BUY & quantity < 0.
 
 
 class Order:
-    """ 订单对象
+    """ Order object.
+
+    Attributes:
+        account: Trading account name, e.g. test@gmail.com.
+        platform: Exchange platform name, e.g. binance/bitmex.
+        strategy: Strategy name, e.g. my_test_strategy.
+        order_no: order id.
+        symbol: Trading pair name, e.g. ETH/BTC.
+        action: Trading side, BUY/SELL.
+        price: Order price.
+        quantity: Order quantity.
+        remain: Remain quantity that not filled.
+        status: Order status.
+        avg_price: Average price that filled.
+        order_type: Order type.
+        trade_type: Trade type, only for future order.
+        ctime: Order create time, microsecond.
+        utime: Order update time, microsecond.
     """
 
     def __init__(self, account=None, platform=None, strategy=None, order_no=None, symbol=None, action=None, price=0,
                  quantity=0, remain=0, status=ORDER_STATUS_NONE, avg_price=0, order_type=ORDER_TYPE_LIMIT,
                  trade_type=TRADE_TYPE_NONE, ctime=None, utime=None):
-        self.platform = platform  # 交易平台
-        self.account = account  # 交易账户
-        self.strategy = strategy  # 策略名称
-        self.order_no = order_no  # 委托单号
-        self.action = action  # 买卖类型 SELL-卖，BUY-买
-        self.order_type = order_type  # 委托单类型 MARKET-市价，LIMIT-限价
-        self.symbol = symbol  # 交易对 如: ETH/BTC
-        self.price = price  # 委托价格
-        self.quantity = quantity  # 委托数量（限价单）
-        self.remain = remain if remain else quantity  # 剩余未成交数量
-        self.status = status  # 委托单状态
-        self.avg_price = avg_price  # 成交均价
-        self.trade_type = trade_type  # 合约订单类型 开多/开空/平多/平空
-        self.ctime = ctime if ctime else tools.get_cur_timestamp_ms()  # 创建订单时间戳
-        self.utime = utime if utime else tools.get_cur_timestamp_ms()  # 交易所订单更新时间
+        self.platform = platform
+        self.account = account
+        self.strategy = strategy
+        self.order_no = order_no
+        self.action = action
+        self.order_type = order_type
+        self.symbol = symbol
+        self.price = price
+        self.quantity = quantity
+        self.remain = remain if remain else quantity
+        self.status = status
+        self.avg_price = avg_price
+        self.trade_type = trade_type
+        self.ctime = ctime if ctime else tools.get_cur_timestamp_ms()
+        self.utime = utime if utime else tools.get_cur_timestamp_ms()
 
     def __str__(self):
         info = "[platform: {platform}, account: {account}, strategy: {strategy}, order_no: {order_no}, " \
