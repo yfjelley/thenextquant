@@ -1,6 +1,15 @@
 # Change Logs
 
 
+### v0.1.5
+
+*Date: 2019/07/22*  
+*Summary:*
+- Add [Coinsuper Premium](../example/coinsuper_pre) Trade module.
+- Publish OrderEvent.
+- Upgrade Mongodb client.
+
+
 ### v0.1.4
 
 *Date: 2019/07/16*  
