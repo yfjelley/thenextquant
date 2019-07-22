@@ -33,11 +33,11 @@ class KLineData:
     def __init__(self, platform):
         """ Initialize object.
         """
-        self._db = platform  # Db name. => MongoDB db name.
+        self._db_name = platform  # Db name. => MongoDB db name.
         self._collection = "kline"  # Table name. => MongoDB collection name.
         self._platform = platform
         self._k_to_c = {}   # Kline types cursor for db. e.g. {"BTC/USD": "kline_btc_usd"}
-        self._db = MongoDBBase(self._db, self._collection)  # db instance
+        self._db = MongoDBBase(self._db_name, self._collection)  # db instance
 
     async def create_new_kline(self, kline: Kline):
         """ Insert kline data to db.
@@ -132,7 +132,7 @@ class KLineData:
         if not cursor:
             x, y = symbol.split("/")
             collection = "kline_{x}_{y}".format(x=x.lower(), y=y.lower())
-            cursor = self._db._conn[self._db][collection]
+            cursor = self._db.new_cursor(self._db_name, collection)
             self._k_to_c[symbol] = cursor
         return cursor
 

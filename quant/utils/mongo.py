@@ -1,13 +1,12 @@
 # -*- coding:utf-8 -*-
 
 """
-mongodb async操作接口
+Mongodb async API client.
+https://docs.mongodb.org/manual/
 
 Author: HuangTao
 Date:   2018/04/28
-Update: 2018/12/11  1. 取消初始化使用类变量 DB 和 COLLECTION，直接在 self.__init__ 函数传入 db 和 collection;
-                    2. 修改名称 self.conn 到 self._conn;
-                    3. 修改名称 self.cursor 到 self._cursor;
+Email:  huangtao@ifclover.com
 """
 
 import copy
@@ -24,11 +23,18 @@ __all__ = ("initMongodb", "MongoDBBase", )
 
 
 MONGO_CONN = None
-DELETE_FLAG = "delete"  # True 已经删除，False 或者没有该字段表示没有删除
+DELETE_FLAG = "delete"  # Delete flag, `True` is deleted, otherwise is not deleted.
 
 
 def initMongodb(host="127.0.0.1", port=27017, username="", password="", dbname="admin"):
-    """ 初始化mongodb连接
+    """ Initialize a connection pool for MongoDB.
+
+    Args:
+        host: Host for MongoDB server.
+        port: Port for MongoDB server.
+        username: Username for MongoDB server.
+        password: Username for MongoDB server.
+        dbname: DB name to connect for, default is `admin`.
     """
     if username and password:
         uri = "mongodb://{username}:{password}@{host}:{port}/{dbname}".format(username=quote_plus(username),
@@ -45,29 +51,56 @@ def initMongodb(host="127.0.0.1", port=27017, username="", password="", dbname="
 
 
 class MongoDBBase(object):
-    """ mongodb 数据库操作接口
+    """ Create a MongoDB connection cursor.
+
+    Args:
+        db: DB name.
+        collection: Collection name.
     """
 
     def __init__(self, db, collection):
-        """ 初始化
-        @param db 数据库
-        @param collection 表
-        """
+        """ Initialize. """
         self._db = db
         self._collection = collection
         self._conn = MONGO_CONN
         self._cursor = self._conn[db][collection]
 
-    async def get_list(self, spec={}, fields=None, sort=[], skip=0, limit=9999, cursor=None):
-        """ 批量获取数据
-        @param spec 查询条件
-        @param fields 返回数据的字段
-        @param sort 排序规则
-        @param skip 查询起点
-        @param limit 返回数据条数
-        @param cursor 查询游标，如不指定默认使用self._cursor
-        * NOTE: 必须传入limit，否则默认返回数据条数可能因为pymongo的默认值而改变
+    def new_cursor(self, db, collection):
+        """ Generate a new cursor.
+
+        Args:
+            db: New db name.
+            collection: New collection name.
+
+        Return:
+            cursor: New cursor.
         """
+        cursor = self._conn[db][collection]
+        return cursor
+
+    async def get_list(self, spec=None, fields=None, sort=None, skip=0, limit=9999, cursor=None):
+        """ Get multiple document list.
+
+        Args:
+            spec: Query params, optional. Specifies selection filter using query operators.
+                To return all documents in a collection, omit this parameter or pass an empty document ({}).
+            fields: projection params, optional. Specifies the fields to return in the documents that match the query
+                filter. To return all fields in the matching documents, omit this parameter.
+            sort: A Set() document that defines the sort order of the result set. e.g. [("age": 1), ("name": -1)]
+            skip: The cursor start point, default is 0.
+            limit: The max documents to return, default is 9999.
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            datas: Documents.
+
+        NOTE:
+            MUST input `limit` params, because pymongo maybe change the return documents's count.
+        """
+        if not spec:
+            spec = {}
+        if not sort:
+            sort = []
         if not cursor:
             cursor = self._cursor
         if "_id" in spec:
@@ -80,26 +113,37 @@ class MongoDBBase(object):
             datas.append(item)
         return datas
 
-    async def find_one(self, spec={}, fields=None, sort=[], cursor=None):
-        """ 查找单条数据
-        @param spec 查询条件
-        @param fields 返回数据的字段
-        @param sort 排序规则
-        @param cursor 查询游标，如不指定默认使用self._cursor
+    async def find_one(self, spec=None, fields=None, sort=None, cursor=None):
+        """ Get one document.
+
+        Args:
+            spec: Query params, optional. Specifies selection filter using query operators.
+                To return all documents in a collection, omit this parameter or pass an empty document ({}).
+            fields: projection params, optional. Specifies the fields to return in the documents that match the query
+                filter. To return all fields in the matching documents, omit this parameter.
+            sort: A Set() document that defines the sort order of the result set. e.g. [("age": 1), ("name": -1)]
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            data: Document or None.
         """
-        if not cursor:
-            cursor = self._cursor
         data = await self.get_list(spec, fields, sort, limit=1, cursor=cursor)
         if data:
             return data[0]
         else:
             return None
 
-    async def count(self, spec={}, cursor=None):
-        """ 计算数据条数
-        @param spec 查询条件
-        @param n 返回查询的条数
-        @param cursor 查询游标，如不指定默认使用self._cursor
+    async def count(self, spec=None, cursor=None):
+        """ Counts the number of documents referenced by a cursor.
+
+        Args:
+            spec: Query params, optional. Specifies selection filter using query operators.
+                To return all documents in a collection, omit this parameter or pass an empty document ({}).
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            n: Count for query document.
+
         """
         if not cursor:
             cursor = self._cursor
@@ -107,40 +151,50 @@ class MongoDBBase(object):
         n = await cursor.count(spec)
         return n
 
-    async def insert(self, docs_data, cursor=None):
-        """ 插入数据
-        @param docs_data 插入数据 dict或list
-        @param ret_ids 插入数据的id列表
-        @param cursor 查询游标，如不指定默认使用self._cursor
+    async def insert(self, docs, cursor=None):
+        """ Insert (a) document(s).
+
+        Args:
+            docs: Dict or List to be inserted.
+            cursor: DB cursor, default is `self._cursor`.
+
+        Return:
+            ret_ids: Document id(s) that already inserted, if insert a dict, `ret_ids` is a id string; if insert a list,
+                `ret_ids` is a id list.
         """
         if not cursor:
             cursor = self._cursor
-        docs = copy.deepcopy(docs_data)
+        docs_data = copy.deepcopy(docs)
         ret_ids = []
         is_one = False
         create_time = tools.get_cur_timestamp()
-        if not isinstance(docs, list):
-            docs = [docs]
+        if not isinstance(docs_data, list):
+            docs_data = [docs_data]
             is_one = True
-        for doc in docs:
+        for doc in docs_data:
             doc["_id"] = ObjectId()
             doc["create_time"] = create_time
             doc["update_time"] = create_time
             ret_ids.append(str(doc["_id"]))
-        cursor.insert_many(docs)
+        cursor.insert_many(docs_data)
         if is_one:
             return ret_ids[0]
         else:
             return ret_ids
 
     async def update(self, spec, update_fields, upsert=False, multi=False, cursor=None):
-        """ 更新
-        @param spec 更新条件
-        @param update_fields 更新字段
-        @param upsert 如果不满足条件，是否插入新数据
-        @param multi 是否批量更新
-        @return modified_count 更新数据条数
-        @param cursor 查询游标，如不指定默认使用self._cursor
+        """ Update (a) document(s).
+
+        Args:
+            spec: Query params, optional. Specifies selection filter using query operators.
+                To return all documents in a collection, omit this parameter or pass an empty document ({}).
+            update_fields: Fields to be updated.
+            upsert: If server this document if not exist? True or False.
+            multi: Update multiple documents? True or False.
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            modified_count: How many documents has been modified.
         """
         if not cursor:
             cursor = self._cursor
@@ -159,10 +213,14 @@ class MongoDBBase(object):
             return result.modified_count
 
     async def delete(self, spec, cursor=None):
-        """ 软删除
-        @param spec 删除条件
-        @return delete_count 删除数据的条数
-        @param cursor 查询游标，如不指定默认使用self._cursor
+        """ Soft delete (a) document(s).
+
+        Args:
+            spec: Query params. Specifies selection filter using query operators.
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            delete_count: How many documents has been deleted.
         """
         if not cursor:
             cursor = self._cursor
@@ -174,11 +232,15 @@ class MongoDBBase(object):
         return delete_count
 
     async def remove(self, spec, multi=False, cursor=None):
-        """ 彻底删除数据
-        @param spec 删除条件
-        @param multi 是否全部删除
-        @return deleted_count 删除数据的条数
-        @param cursor 查询游标，如不指定默认使用self._cursor
+        """ delete (a) document(s) perpetually.
+
+        Args:
+            spec: Query params. Specifies selection filter using query operators.
+            multi: Delete multiple documents? True or False.
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            delete_count: How many documents has been deleted.
         """
         if not cursor:
             cursor = self._cursor
@@ -189,13 +251,20 @@ class MongoDBBase(object):
             result = await cursor.delete_many(spec)
             return result.deleted_count
 
-    async def distinct(self, key, spec={}, cursor=None):
-        """ distinct查询
-        @param key 查询的key
-        @param spec 查询条件
-        @return result 过滤结果list
-        @param cursor 查询游标，如不指定默认使用self._cursor
+    async def distinct(self, key, spec=None, cursor=None):
+        """ Distinct query.
+
+        Args:
+            key: Distinct key.
+            spec: Query params, optional. Specifies selection filter using query operators.
+                To return all documents in a collection, omit this parameter or pass an empty document ({}).
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            result: Distinct result.
         """
+        if not spec:
+            spec = {}
         if not cursor:
             cursor = self._cursor
         spec[DELETE_FLAG] = {"$ne": True}
@@ -204,15 +273,20 @@ class MongoDBBase(object):
         result = await cursor.distinct(key, spec)
         return result
 
-    async def find_one_and_update(self, spec, update_fields, upsert=False, return_document=False, fields=None, cursor=None):
-        """ 查询一条指定数据，并修改这条数据
-        @param spec 查询条件
-        @param update_fields 更新字段
-        @param upsert 如果不满足条件，是否插入新数据，默认False
-        @param return_document 返回修改之前数据或修改之后数据，默认False为修改之前数据
-        @param fields 需要返回的字段，默认None为返回全部数据
-        @return result 修改之前或之后的数据
-        @param cursor 查询游标，如不指定默认使用self._cursor
+    async def find_one_and_update(self, spec, update_fields, upsert=False, return_document=False, fields=None,
+                                  cursor=None):
+        """ Find a document and update this document.
+
+        Args:
+            spec: Query params.
+            update_fields: Fields to be updated.
+            upsert: If server this document if not exist? True or False.
+            return_document: If return new document? `True` return new document, False return old document.
+            fields: The fields to be return.
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            result: Document.
         """
         if not cursor:
             cursor = self._cursor
@@ -228,12 +302,16 @@ class MongoDBBase(object):
             result["_id"] = str(result["_id"])
         return result
 
-    async def find_one_and_delete(self, spec={}, fields=None, cursor=None):
-        """ 查询一条指定数据，并删除这条数据
-        @param spec 删除条件
-        @param fields 需要返回的字段，默认None为返回全部数据
-        @param result 删除之前的数据
-        @param cursor 查询游标，如不指定默认使用self._cursor
+    async def find_one_and_delete(self, spec, fields=None, cursor=None):
+        """ Find a document and soft-delete this document.
+
+        Args:
+            spec: Query params.
+            fields: The fields to be return.
+            cursor: Query cursor, default is `self._cursor`.
+
+        Return:
+            result: Document.
         """
         if not cursor:
             cursor = self._cursor
@@ -246,7 +324,7 @@ class MongoDBBase(object):
         return result
 
     def _convert_id_object(self, origin):
-        """ 将字符串的_id转换成ObjectId类型
+        """ Convert a string id to `ObjectId`.
         """
         if isinstance(origin, str):
             return ObjectId(origin)
