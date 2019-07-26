@@ -174,6 +174,27 @@ class AssetData:
         asset_id = await self._db.insert(d)
         return asset_id
 
+    async def create_new_assets(self, *assets: Asset):
+        """ Insert asset data list to db.
+
+        Args:
+            assets: One or multiple Asset object.
+
+        Returns:
+            asset_ids: Asset id list, every item is a MongoDB document _id.
+        """
+        docs = []
+        for asset in assets:
+            d = {
+                "platform": asset.platform,
+                "account": asset.account,
+                "timestamp": asset.timestamp,
+                "assets": asset.assets
+            }
+            docs.append(d)
+        asset_ids = await self._db.insert(docs)
+        return asset_ids
+
     async def update_asset(self, asset: Asset):
         """ Update asset data.
 
