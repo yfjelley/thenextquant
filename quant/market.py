@@ -1,10 +1,11 @@
 # -*- coding:utf-8 -*-
 
 """
-行情数据订阅模块
+Market module.
 
 Author: HuangTao
 Date:   2019/02/16
+Email:  huangtao@ifclover.com
 """
 
 import json
@@ -14,17 +15,18 @@ from quant.utils import logger
 
 
 class Orderbook:
-    """ 订单薄
+    """ Orderbook object.
+
+    Args:
+        platform: Exchange platform name, e.g. binance/bitmex.
+        symbol: Trade pair name, e.g. ETH/BTC.
+        asks: Asks list, e.g. [[price, quantity], [...], ...]
+        bids: Bids list, e.g. [[price, quantity], [...], ...]
+        timestamp: Update time, microsecond.
     """
 
     def __init__(self, platform=None, symbol=None, asks=None, bids=None, timestamp=None):
-        """ 初始化
-        @param platform 交易平台
-        @param symbol 交易对
-        @param asks 买盘数据 [[price, quantity], [...], ...]
-        @param bids 卖盘数据 [[price, quantity], [...], ...]
-        @param timestamp 时间戳(毫秒)
-        """
+        """ Initialize. """
         self.platform = platform
         self.symbol = symbol
         self.asks = asks
@@ -51,18 +53,19 @@ class Orderbook:
 
 
 class Trade:
-    """ 交易数据
+    """ Trade object.
+
+    Args:
+        platform: Exchange platform name, e.g. binance/bitmex.
+        symbol: Trade pair name, e.g. ETH/BTC.
+        action: Trade action, BUY or SELL.
+        price: Order place price.
+        quantity: Order place quantity.
+        timestamp: Update time, microsecond.
     """
 
     def __init__(self, platform=None, symbol=None, action=None, price=None, quantity=None, timestamp=None):
-        """ 初始化
-        @param platform 交易平台
-        @param symbol 交易对
-        @param action 操作 BUY / SELL
-        @param price 价格
-        @param quantity 数量
-        @param timestamp 时间戳(毫秒)
-        """
+        """ Initialize. """
         self.platform = platform
         self.symbol = symbol
         self.action = action
@@ -91,22 +94,23 @@ class Trade:
 
 
 class Kline:
-    """ K线 1分钟
+    """ Kline object.
+
+    Args:
+        platform: Exchange platform name, e.g. binance/bitmex.
+        symbol: Trade pair name, e.g. ETH/BTC.
+        open: Open price.
+        high: Highest price.
+        low: Lowest price.
+        close: Close price.
+        volume: Total trade volume.
+        timestamp: Update time, microsecond.
+        kline_type: Kline type name, kline - 1min, kline_5min - 5min, kline_15min - 15min.
     """
 
     def __init__(self, platform=None, symbol=None, open=None, high=None, low=None, close=None, volume=None,
                  timestamp=None, kline_type=None):
-        """ 初始化
-        @param platform 平台
-        @param symbol 交易对
-        @param open 开盘价
-        @param high 最高价
-        @param low 最低价
-        @param close 收盘价
-        @param volume 成交量
-        @param timestamp 时间戳(毫秒)
-        @param kline_type K线类型 kline 1分钟K线，kline_5min 5分钟K线，kline_15min 15分钟K线
-        """
+        """ Initialize. """
         self.platform = platform
         self.symbol = symbol
         self.open = open
@@ -141,30 +145,36 @@ class Kline:
 
 
 class Market:
-    """ 行情订阅模块
+    """ Subscribe Market.
+
+    Args:
+        market_type: Market data type,
+            MARKET_TYPE_TRADE = "trade"
+            MARKET_TYPE_ORDERBOOK = "orderbook"
+            MARKET_TYPE_KLINE = "kline"
+            MARKET_TYPE_KLINE_5M = "kline_5m"
+            MARKET_TYPE_KLINE_15M = "kline_15m"
+        platform: Exchange platform name, e.g. binance/bitmex.
+        symbol: Trade pair name, e.g. ETH/BTC.
+        callback: Asynchronous callback function for market data update.
+                e.g. async def on_event_kline_update(kline: Kline):
+                        pass
     """
 
     def __init__(self, market_type, platform, symbol, callback):
-        """ 初始化
-        @param market_type 行情类型
-        @param platform 交易平台
-        @param symbol 交易对
-        @param callback 行情更新回调函数，必须是async异步函数，回调参数为行情对象，比如k线回调函数: async def on_event_kline_update(kline: Kline): pass
-        """
+        """ Initialize. """
+        if platform == "#" or symbol == "#":
+            multi = True
+        else:
+            multi = False
         if market_type == const.MARKET_TYPE_ORDERBOOK:
             from quant.event import EventOrderbook
-            EventOrderbook(platform, symbol).subscribe(callback)
+            EventOrderbook(platform, symbol).subscribe(callback, multi)
         elif market_type == const.MARKET_TYPE_TRADE:
             from quant.event import EventTrade
-            EventTrade(platform, symbol).subscribe(callback)
-        elif market_type == const.MARKET_TYPE_KLINE:
+            EventTrade(platform, symbol).subscribe(callback, multi)
+        elif market_type in [const.MARKET_TYPE_KLINE, const.MARKET_TYPE_KLINE_5M, const.MARKET_TYPE_KLINE_15M]:
             from quant.event import EventKline
-            EventKline(platform, symbol, kline_type=const.MARKET_TYPE_KLINE).subscribe(callback)
-        elif market_type == const.MARKET_TYPE_KLINE_5M:
-            from quant.event import EventKline
-            EventKline(platform, symbol, kline_type=const.MARKET_TYPE_KLINE).subscribe(callback)
-        elif market_type == const.MARKET_TYPE_KLINE_15M:
-            from quant.event import EventKline
-            EventKline(platform, symbol, kline_type=const.MARKET_TYPE_KLINE_15M).subscribe(callback)
+            EventKline(platform, symbol, kline_type=market_type).subscribe(callback, multi)
         else:
             logger.error("market_type error:", market_type, caller=self)

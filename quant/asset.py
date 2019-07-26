@@ -1,27 +1,29 @@
 # -*- coding:utf-8 -*-
 
 """
-资产数据
+Asset module.
 
 Author: HuangTao
 Date:   2019/02/16
+Email:  huangtao@ifclover.com
 """
 
 import json
 
 
 class Asset:
-    """ 资产
+    """ Asset object.
+
+    Args:
+        platform: Exchange platform name, e.g. binance/bitmex.
+        account: Trade account name, e.g. test@gmail.com.
+        assets: Asset information, e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
+        timestamp: Published time, microsecond.
+        update: If any update? True or False.
     """
 
     def __init__(self, platform=None, account=None, assets=None, timestamp=None, update=False):
-        """ 初始化
-        @param platform 交易平台
-        @param account 交易账户
-        @param assets 资产信息 {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-        @param timestamp 时间戳(毫秒)
-        @param update 资产是否更新 True 有更新 / False 无更新
-        """
+        """ Initialize. """
         self.platform = platform
         self.account = account
         self.assets = assets
@@ -48,14 +50,21 @@ class Asset:
 
 
 class AssetSubscribe:
-    """ 资产订阅
+    """ Subscribe Asset.
+
+    Args:
+        platform: Exchange platform name, e.g. binance/bitmex.
+        account: Trade account name, e.g. test@gmail.com.
+        callback: Asynchronous callback function for market data update.
+                e.g. async def on_event_account_update(asset: Asset):
+                        pass
     """
 
     def __init__(self, platform, account, callback):
-        """ 初始化
-        @param platform 交易平台
-        @param account 交易账户
-        @param callback 资产更新回调函数，必须是async异步函数，回调参数为 Asset 对象，比如: async def on_event_account_update(asset: Asset): pass
-        """
+        """ Initialize. """
+        if platform == "#" or account == "#":
+            multi = True
+        else:
+            multi = False
         from quant.event import EventAsset
-        EventAsset(platform, account).subscribe(callback)
+        EventAsset(platform, account).subscribe(callback, multi)

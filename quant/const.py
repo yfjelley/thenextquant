@@ -19,19 +19,18 @@ OKEX_SWAP = "okex_swap"  # OKEx SWAP https://www.okex.me/future/swap
 BITMEX = "bitmex"  # BitMEX https://www.bitmex.com/
 HUOBI = "huobi"  # Huobi https://www.hbg.com/zh-cn/
 HUOBI_FUTURE = "huobi_future"  # Huobi Future https://www.hbdm.com/en-us/contract/exchange/
-COINBASE = "coinbase"
+COINBASE = "coinbase"  # Coinbase https://www.coinbase.com/
 MXC = "mxc"
 DERIBIT = "deribit"  # Deribit https://www.deribit.com/
 KRAKEN = "kraken"  # Kraken https://www.kraken.com
 BITSTAMP = "bitstamp"
-GEMINI = "gemini"
+GEMINI = "gemini"  # Gemini https://gemini.com/
 COINSUPER = "coinsuper"  # Coinsuper https://www.coinsuper.com/
 COINSUPER_PRE = "coinsuper_pre"  # Coinsuper Premium https://premium.coinsuper.com
 GATE = "gate"  # Gate.io https://gateio.news/
 
 
 # Market Types
-MARKET_TYPE_TICKER = "ticker"
 MARKET_TYPE_TRADE = "trade"
 MARKET_TYPE_ORDERBOOK = "orderbook"
 MARKET_TYPE_KLINE = "kline"
