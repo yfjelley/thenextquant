@@ -148,7 +148,7 @@ class MongoDBBase(object):
         if not cursor:
             cursor = self._cursor
         spec[DELETE_FLAG] = {"$ne": True}
-        n = await cursor.count(spec)
+        n = await cursor.count_documents(spec)
         return n
 
     async def insert(self, docs, cursor=None):
