@@ -1,6 +1,18 @@
 # Change Logs
 
 
+### v0.1.6
+
+*Date: 2019/07/29*  
+*Summary:*
+- Add ConfigEvent to realize run-time-update.
+- Add web module, include http server.
+- Add validator module.
+- Add KeyboardInterrupt caught.
+- Enable subscribe multiple events.
+- Fix bug: When save kline to mongodb, convert symbol name to collection name.
+
+
 ### v0.1.5
 
 *Date: 2019/07/22*  
