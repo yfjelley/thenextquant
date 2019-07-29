@@ -130,8 +130,8 @@ class KLineData:
         """
         cursor = self._k_to_c.get(symbol)
         if not cursor:
-            x, y = symbol.split("/")
-            collection = "kline_{x}_{y}".format(x=x.lower(), y=y.lower())
+            s = symbol.replace("/", "").replace("-", "")
+            collection = "kline_{}".format(s)
             cursor = self._db.new_cursor(self._db_name, collection)
             self._k_to_c[symbol] = cursor
         return cursor
