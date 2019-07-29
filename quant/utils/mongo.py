@@ -147,6 +147,8 @@ class MongoDBBase(object):
         """
         if not cursor:
             cursor = self._cursor
+        if not spec:
+            spec = {}
         spec[DELETE_FLAG] = {"$ne": True}
         n = await cursor.count_documents(spec)
         return n
