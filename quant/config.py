@@ -11,6 +11,7 @@ Email:  huangtao@ifclover.com
 import json
 
 from quant.utils import tools
+from quant.utils import logger
 
 
 class Config:
@@ -26,6 +27,7 @@ class Config:
             REDIS: Redis config, default is None.
             PLATFORMS: Trading Exchanges config, default is {}.
             HEARTBEAT: Server heartbeat config, default is {}.
+            HTTP_SERVER: HTTP server config, default is None.
             PROXY: HTTP proxy config, default is None.
     """
 
@@ -38,6 +40,7 @@ class Config:
         self.redis = {}
         self.platforms = {}
         self.heartbeat = {}
+        self.http_server = None
         self.proxy = None
 
     def initialize(self):
@@ -71,7 +74,6 @@ class Config:
         Args:
             data: New config received from ConfigEvent.
         """
-        from quant.utils import logger
         server_id = data["server_id"]
         params = data["params"]
         if server_id != self.server_id:
@@ -100,7 +102,26 @@ class Config:
         self.redis = update_fields.get("REDIS", None)
         self.platforms = update_fields.get("PLATFORMS", {})
         self.heartbeat = update_fields.get("HEARTBEAT", {})
+        self.http_server = update_fields.get("HTTP_SERVER", None)
         self.proxy = update_fields.get("PROXY", None)
+
+        if self.http_server:
+            port = self.http_server.get("port")
+            apis = self.http_server.get("apis")
+            middlewares = self.http_server.get("middlewares", [])
+            ext_uri = self.http_server.get("ext_uri", [])
+            if not isinstance(port, int) or port < 1024 or port > 65535:
+                logger.error("http port error! port:", port, caller=self)
+                exit(0)
+            if not isinstance(apis, list):
+                logger.error("http api pathes error! apis:", apis, caller=self)
+                exit(0)
+            if not isinstance(middlewares, list):
+                logger.error("http middlewares error! middlewares:", middlewares, caller=self)
+                exit(0)
+            if not isinstance(ext_uri, list):
+                logger.error("http ext_uri error! ext_uri:", ext_uri, caller=self)
+                exit(0)
 
         for k, v in update_fields.items():
             setattr(self, k, v)
