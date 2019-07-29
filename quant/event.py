@@ -140,15 +140,19 @@ class Event:
 
 
 class EventConfig(Event):
-    """ 配置更新事件
+    """ Config event.
+
+    Attributes:
+        server_id: Server id.
+        params: Config params.
+
     * NOTE:
-        发布：管理工具
-        订阅：配置模块
+        Publisher: Manager Server.
+        Subscriber: Any Servers who need.
     """
 
     def __init__(self, server_id=None, params=None):
-        """ 初始化
-        """
+        """Initialize."""
         name = "EVENT_CONFIG"
         exchange = "Config"
         queue = "{server_id}.{exchange}".format(server_id=server_id, exchange=exchange)
@@ -160,23 +164,23 @@ class EventConfig(Event):
         super(EventConfig, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
-        """ 解析self._data数据
-        """
-        pass
+        return self._data
 
 
 class EventHeartbeat(Event):
-    """ 服务心跳事件
+    """ Server Heartbeat event.
+
+    Attributes:
+        server_id: Server id.
+        count: Server heartbeat count.
+
     * NOTE:
-        订阅：监控模块
-        发布：所有服务
+        Publisher: All servers
+        Subscriber: Monitor server.
     """
 
     def __init__(self, server_id=None, count=None):
-        """ 初始化
-        @param server_id 服务进程id
-        @param count 心跳次数
-        """
+        """Initialize."""
         name = "EVENT_HEARTBEAT"
         exchange = "Heartbeat"
         queue = "{server_id}.{exchange}".format(server_id=server_id, exchange=exchange)
@@ -187,9 +191,7 @@ class EventHeartbeat(Event):
         super(EventHeartbeat, self).__init__(name, exchange, queue, data=data)
 
     def parse(self):
-        """ 解析self._data数据
-        """
-        pass
+        return self._data
 
 
 class EventAsset(Event):

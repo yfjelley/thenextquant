@@ -1,10 +1,11 @@
 # -*- coding:utf-8 -*-
 
 """
-服务配置
+Config module.
 
 Author: HuangTao
 Date:   2018/05/03
+Email:  huangtao@ifclover.com
 """
 
 import json
@@ -13,59 +14,42 @@ from quant.utils import tools
 
 
 class Config:
-    """ 服务配置
+    """ Config module will load a json file like `config.json` and parse the content to json object.
+        1. Configure content must be key-value pair, and `key` will be set as Config module's attributes;
+        2. Invoking Config module's attributes cat get those values;
+        3. Some `key` name is upper case are the build-in, and all `key` will be set to lower case:
+            SERVER_ID: Server id, every running process has a unique id.
+            RUN_TIME_UPDATE: If this server support run-time-update(receive EventConfig), True or False, default is False.
+            LOG: Logger print config.
+            RABBITMQ: RabbitMQ config, default is None.
+            MONGODB: MongoDB config, default is None.
+            REDIS: Redis config, default is None.
+            PLATFORMS: Trading Exchanges config, default is {}.
+            HEARTBEAT: Server heartbeat config, default is {}.
+            PROXY: HTTP proxy config, default is None.
     """
 
     def __init__(self):
-        """ 配置项
-            `SERVER_ID`     服务ID
-            `RUN_TIME_UPDATE`   是否支持配置动态更新
-            `LOG`           日志配置
-            `RABBITMQ`      RabbitMQ配置
-            `MONGODB`       mongodb配置
-            `REDIS`         redis配置
-            `PLATFORMS`     交易所配置
-            `HEARTBEAT`     服务心跳配置 {"interval": 0, "broadcast": 0}
-            `PROXY`         HTTP代理配置
-        """
-        self.server_id = None       # 服务id（manager服务创建）
-        self.run_time_update = False  # 是否支持配置动态更新
-        self.log = {}               # 日志配置
-        self.rabbitmq = {}          # RabbitMQ配置
-        self.mongodb = {}           # Mongodb配置
-        self.redis = {}             # Redis配置
-        self.platforms = {}         # 交易所配置
-        self.heartbeat = {}         # 服务心跳配置
-        self.proxy = None           # HTTP代理配置
+        self.server_id = None
+        self.run_time_update = False
+        self.log = {}
+        self.rabbitmq = {}
+        self.mongodb = {}
+        self.redis = {}
+        self.platforms = {}
+        self.heartbeat = {}
+        self.proxy = None
 
     def initialize(self):
-        """ 初始化
-        """
-        pass
-    #     # 订阅事件 参数更新事件
-    #     if self.run_time_update:
-    #         from quant.event import EventConfig
-    #         EventConfig(self.server_id).subscribe(self.on_event_config, False)
-    #
-    # async def on_event_config(self, event):
-    #     """ 更新参数
-    #     @param event 事件对象
-    #     """
-    #     from quant.event import EventConfig
-    #     event = EventConfig(self.server_id)
-    #     if event.server_id != self.server_id:
-    #         return
-    #     if not isinstance(event.params, dict):
-    #         logger.error("params format error! params:", event.params, caller=self)
-    #         return
-    #
-    #     # 将配置文件中的数据按照dict格式解析并设置成config的属性
-    #     self.update(event.params)
-    #     logger.info("config update success!", caller=self)
+        if self.run_time_update:
+            from quant.event import EventConfig
+            EventConfig(self.server_id).subscribe(self._on_event_config)
 
     def loads(self, config_file=None):
-        """ 加载配置
-        @param config_file json配置文件
+        """ Load config file.
+
+        Args:
+            config_file: config json file.
         """
         configures = {}
         if config_file:
@@ -79,23 +63,45 @@ class Config:
             if not configures:
                 print("config json file error!")
                 exit(0)
-        self.update(configures)
+        self._update(configures)
 
-    def update(self, update_fields):
-        """ 更新配置
-        @param update_fields 更新字段
+    async def _on_event_config(self, data):
+        """ Config event update.
+
+        Args:
+            data: New config received from ConfigEvent.
         """
-        self.server_id = update_fields.get("SERVER_ID", tools.get_uuid1())  # 服务id
-        self.run_time_update = update_fields.get("RUN_TIME_UPDATE", False)  # 是否支持配置动态更新
-        self.log = update_fields.get("LOG", {})                     # 日志配置
-        self.rabbitmq = update_fields.get("RABBITMQ", None)         # RabbitMQ配置
-        self.mongodb = update_fields.get("MONGODB", None)           # mongodb配置
-        self.redis = update_fields.get("REDIS", None)               # redis配置
-        self.platforms = update_fields.get("PLATFORMS", {})         # 交易所配置
-        self.heartbeat = update_fields.get("HEARTBEAT", {})         # 服务心跳配置
-        self.proxy = update_fields.get("PROXY", None)               # HTTP代理配置
+        from quant.utils import logger
+        server_id = data["server_id"]
+        params = data["params"]
+        if server_id != self.server_id:
+            logger.error("Server id error:", server_id, caller=self)
+            return
+        if not isinstance(params, dict):
+            logger.error("params format error:", params, caller=self)
+            return
 
-        # 将配置文件中的数据按照dict格式解析并设置成config的属性
+        params["SERVER_ID"] = self.server_id
+        params["RUN_TIME_UPDATE"] = self.run_time_update
+        self._update(params)
+        logger.info("config update success!", caller=self)
+
+    def _update(self, update_fields):
+        """ Update config attributes.
+
+        Args:
+            update_fields: Update fields.
+        """
+        self.server_id = update_fields.get("SERVER_ID", tools.get_uuid1())
+        self.run_time_update = update_fields.get("RUN_TIME_UPDATE", False)
+        self.log = update_fields.get("LOG", {})
+        self.rabbitmq = update_fields.get("RABBITMQ", None)
+        self.mongodb = update_fields.get("MONGODB", None)
+        self.redis = update_fields.get("REDIS", None)
+        self.platforms = update_fields.get("PLATFORMS", {})
+        self.heartbeat = update_fields.get("HEARTBEAT", {})
+        self.proxy = update_fields.get("PROXY", None)
+
         for k, v in update_fields.items():
             setattr(self, k, v)
 
