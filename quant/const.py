@@ -28,6 +28,8 @@ GEMINI = "gemini"  # Gemini https://gemini.com/
 COINSUPER = "coinsuper"  # Coinsuper https://www.coinsuper.com/
 COINSUPER_PRE = "coinsuper_pre"  # Coinsuper Premium https://premium.coinsuper.com
 GATE = "gate"  # Gate.io https://gateio.news/
+KUCOIN = "kucoin"  # Kucoin https://www.kucoin.com/
+FCOIN = "fcoin"  # Fcoin https://www.fcoin.com/
 
 
 # Market Types

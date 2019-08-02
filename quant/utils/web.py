@@ -145,21 +145,18 @@ class Websocket:
         process_binary_callback: Asynchronous callback function will be called if any stream data receive from Websocket
             connection, this function only callback `binary` message. e.g.
                 async def process_binary_callback(binary_message): pass
-        send_hb_interval: Send heartbeat interval time(seconds), default is 10s.
         check_conn_interval: Check Websocket connection interval time(seconds), default is 10s.
     """
 
     def __init__(self, url, connected_callback=None, process_callback=None, process_binary_callback=None,
-                 send_hb_interval=10, check_conn_interval=10):
+                 check_conn_interval=10):
         """Initialize."""
         self._url = url
         self._connected_callback = connected_callback
         self._process_callback = process_callback
         self._process_binary_callback = process_binary_callback
-        self._send_hb_interval = send_hb_interval
         self._check_conn_interval = check_conn_interval
         self._ws = None  # Websocket connection object.
-        self._heartbeat_msg = None  # Heartbeat message.
 
     @property
     def ws(self):
@@ -167,8 +164,6 @@ class Websocket:
 
     def initialize(self):
         LoopRunTask.register(self._check_connection, self._check_conn_interval)
-        if self._send_hb_interval > 0:
-            LoopRunTask.register(self._send_heartbeat_msg, self._send_hb_interval)
         SingleTask.run(self._connect)
 
     async def _connect(self):
@@ -218,20 +213,27 @@ class Websocket:
         if self.ws.closed:
             SingleTask.run(self._reconnect)
 
-    async def _send_heartbeat_msg(self, *args, **kwargs):
-        """Send heartbeat message to Websocket server."""
+    async def send(self, data):
+        """ Send message to Websocket server.
+
+        Args:
+            data: Message content, must be dict or string.
+
+        Returns:
+            If send successfully, return True, otherwise return False.
+        """
         if not self.ws:
             logger.warn("Websocket connection not connected yet!", caller=self)
-            return
-        if self._heartbeat_msg:
-            if isinstance(self._heartbeat_msg, dict):
-                await self.ws.send_json(self._heartbeat_msg)
-            elif isinstance(self._heartbeat_msg, str):
-                await self.ws.send_str(self._heartbeat_msg)
-            else:
-                logger.error("send heartbeat message failed:", self._heartbeat_msg, caller=self)
-                return
-            logger.debug("send heartbeat message:", self._heartbeat_msg, caller=self)
+            return False
+        if isinstance(data, dict):
+            await self.ws.send_json(data)
+        elif isinstance(data, str):
+            await self.ws.send_str(data)
+        else:
+            logger.error("send message failed:", data, caller=self)
+            return False
+        logger.debug("send message:", data, caller=self)
+        return True
 
 
 class AsyncHttpRequests(object):

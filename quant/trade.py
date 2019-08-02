@@ -91,6 +91,8 @@ class Trade:
             from quant.platform.kraken import KrakenTrade as T
         elif platform == const.GATE:
             from quant.platform.gate import GateTrade as T
+        elif platform == const.KUCOIN:
+            from quant.platform.kucoin import KucoinTrade as T
         else:
             logger.error("platform error:", platform, caller=self)
             e = Error("platform error")

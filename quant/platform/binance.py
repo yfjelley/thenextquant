@@ -39,7 +39,7 @@ class BinanceRestAPI:
     Attributes:
         host: HTTP request host.
         access_key: Account's ACCESS KEY.
-        secret_key Account's SECRET KEY.
+        secret_key: Account's SECRET KEY.
     """
 
     def __init__(self, host, access_key, secret_key):
