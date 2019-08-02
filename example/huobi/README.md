@@ -84,7 +84,7 @@ class MyStrategy:
 
 - 订单薄更新回调
 
-我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从火币服务器更新
+我们通过 `Market` 模块订阅订单薄行情，并且设置了订单薄更新回调函数 `self.on_event_orderbook_update`，订单薄数据将实时从服务器更新
 并推送至此函数，我们需要根据订单薄数据的实时更新，来实时调整我们的挂单位置。
 
 ```python

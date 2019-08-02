@@ -1,6 +1,14 @@
 # Change Logs
 
 
+### v0.1.7
+
+*Date: 2019/08/02*  
+*Summary:*
+- Add [Kucoin](../example/kucoin) Trade module.
+- Add WarningEvent.
+
+
 ### v0.1.6
 
 *Date: 2019/07/29*  

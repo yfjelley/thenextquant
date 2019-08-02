@@ -88,6 +88,7 @@ python src/main.py config.json
     - [Coinsuper Premium 币币](example/coinsuper_pre)
     - [Kraken 币币/杠杆](example/kraken) 
     - [Gate.io 币币](example/gate)
+    - [Kucoin 币币](example/kucoin)
     - To be continued ...
 
 - 其它

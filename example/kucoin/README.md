@@ -1,7 +1,7 @@
 
-## Coinsuper Premium
+## Kucoin
 
-本文主要介绍如何通过框架SDK开发 [Coinsuper Premium](https://premium.coinsuper.com) 交易所的交易系统。
+本文主要介绍如何通过框架SDK开发 [Kucoin](https://www.kucoin.com) 交易所的交易系统。
 
 ### 1. 准备条件
 
@@ -11,12 +11,12 @@
 - 部署 [RabbitMQ 事件中心服务](../../docs/others/rabbitmq_deploy.md) ---- 事件中心的核心组成部分；
 - 部署 [Market 行情服务](https://github.com/TheNextQuant/Market) ---- 订阅行情事件，如果策略不需要行情数据，那么此服务可以不用部署；
 - 部署 [Asset 资产服务](https://github.com/TheNextQuant/Asset) ---- 账户资产更新事件推送，如果策略不需要账户资产信息，那么此服务可以不用部署；
-- 注册 [Coinsuper Premium](https://premium.coinsuper.com) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
+- 注册 [Kucoin](https://www.kucoin.com) 的账户，并且创建 `ACCESS KEY` 和 `SECRET KEY`，AK有操作委托单权限；
 
 
 ### 2. 一个简单的策略
 
-为了在订单薄买盘提前埋伏订单，在 `BTC/USD` 订单薄盘口距离10美金的位置挂买单，数量为1。
+为了在订单薄买盘提前埋伏订单，在 `BTC/USDT` 订单薄盘口距离10美金的位置挂买单，数量为1。
 随着订单薄盘口价格不断变化，需要将价格已经偏离的订单取消，再重新挂单，使订单始终保持距离买盘盘口价差为 `10 ± 1` 美金。
 这里设置了缓冲价差为 `1` 美金，即只要盘口价格变化在 `± 1` 美金内，都不必撤单之后重新挂单，这样设置的目的是尽量减少挂撤单的次数，因为交易所开放的交易接口有调用频率的限制，
 如果调用太过频繁超过了限制可能会报错。
@@ -55,7 +55,7 @@ class MyStrategy:
         """ 初始化
         """
         self.strategy = config.strategy
-        self.platform = const.COINSUPER_PRE
+        self.platform = const.KUCOIN
         self.account = config.platforms[self.platform]["account"]
         self.access_key = config.platforms[self.platform]["access_key"]
         self.secret_key = config.platforms[self.platform]["secret_key"]
@@ -173,7 +173,7 @@ if __name__ == '__main__':
 我们在配置文件里，加入了如下配置:
 - RABBITMQ 指定事件中心服务器，此配置需要和 [Market 行情服务](https://github.com/TheNextQuant/Market) 、[Asset 资产服务](https://github.com/TheNextQuant/Asset) 一致；
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
-- PLATFORMS 指定需要使用的交易账户，注意名字是 `coinsuper_pre` ；
+- PLATFORMS 指定需要使用的交易账户，注意名字是 `kucoin` ；
 - strategy 策略的名称；
 - symbol 策略运行的交易对；
 
