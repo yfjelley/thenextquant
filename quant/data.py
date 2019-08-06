@@ -267,9 +267,9 @@ class AssetSnapshotData(AssetData):
             datas: Asset data list. e.g. [{"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }, ... ]
         """
         if not end:
-            end = tools.get_cur_timestamp()  # Current timestamp
+            end = tools.get_cur_timestamp_ms()  # Current timestamp
         if not start:
-            start = end - 60 * 60 * 24  # A day ago.
+            start = end - 60 * 60 * 1000 * 24  # A day ago.
         spec = {
             "platform": platform,
             "account": account,
