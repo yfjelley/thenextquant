@@ -169,7 +169,7 @@ class MongoDBBase(object):
         docs_data = copy.deepcopy(docs)
         ret_ids = []
         is_one = False
-        create_time = tools.get_cur_timestamp()
+        create_time = tools.get_cur_timestamp_ms()
         if not isinstance(docs_data, list):
             docs_data = [docs_data]
             is_one = True
@@ -205,7 +205,7 @@ class MongoDBBase(object):
         if "_id" in spec:
             spec["_id"] = self._convert_id_object(spec["_id"])
         set_fields = update_fields.get("$set", {})
-        set_fields["update_time"] = tools.get_cur_timestamp()
+        set_fields["update_time"] = tools.get_cur_timestamp_ms()
         update_fields["$set"] = set_fields
         if not multi:
             result = await cursor.update_one(spec, update_fields, upsert=upsert)
@@ -296,7 +296,7 @@ class MongoDBBase(object):
         if "_id" in spec:
             spec["_id"] = self._convert_id_object(spec["_id"])
         set_fields = update_fields.get("$set", {})
-        set_fields["update_time"] = tools.get_cur_timestamp()
+        set_fields["update_time"] = tools.get_cur_timestamp_ms()
         update_fields["$set"] = set_fields
         result = await cursor.find_one_and_update(spec, update_fields, projection=fields, upsert=upsert,
                                                   return_document=return_document)
