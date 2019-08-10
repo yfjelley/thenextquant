@@ -67,7 +67,7 @@ def int_field(data, field=None, required=True):
         ValidationError: The type of `field` is not int.
     """
     field_data = _field(data, field, required)
-    if not field_data and not required:
+    if not field_data and field_data != 0 and not required:
         return None
     try:
         return int(field_data)
