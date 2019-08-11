@@ -114,7 +114,7 @@ async def error_middleware(request, handler):
     try:
         response = await handler(request)
     except Exception as e:
-        logger.error("Error:", e)
+        logger.exception("Error:", e)
         if isinstance(e, exceptions.CustomException):
             response = WebViewBase.error(e.code, e.msg, e.data)
         else:
