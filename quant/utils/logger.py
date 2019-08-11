@@ -76,7 +76,8 @@ def exception(*args, **kwargs):
     logging.error("*" * 60)
     msg_header, kwargs = _log_msg_header(*args, **kwargs)
     logging.error(_log(msg_header, *args, **kwargs))
-    traceback.print_stack()
+    exc_info = sys.exc_info()
+    traceback.print_exception(*exc_info)
     logging.error("*" * 60)
 
 
