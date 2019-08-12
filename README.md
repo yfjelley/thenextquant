@@ -15,7 +15,7 @@
 
 - 依赖python三方包
 	- aiohttp>=3.2.1
-	- aioamqp>=0.10.0
+	- aioamqp>=0.13.0
 	- motor>=2.0.0 (可选)
 
 - RabbitMQ服务器
