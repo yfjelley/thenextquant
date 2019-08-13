@@ -313,7 +313,7 @@ class OrderData:
 
     def __init__(self):
         """Initialize object."""
-        self._db = "strategy"  # db name
+        self._db = "order"  # db name
         self._collection = "order"  # collection name
         self._db = MongoDBBase(self._db, self._collection)  # db instance
 
