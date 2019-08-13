@@ -5,3 +5,4 @@ dist
 tbag.egg-info
 MANIFEST
 test
+scripts
