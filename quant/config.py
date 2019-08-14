@@ -26,6 +26,7 @@ class Config:
             MONGODB: MongoDB config, default is None.
             REDIS: Redis config, default is None.
             PLATFORMS: Trading Exchanges config, default is {}.
+            ACCOUNTS: Trading Exchanges config list, default is [].
             HEARTBEAT: Server heartbeat config, default is {}.
             HTTP_SERVER: HTTP server config, default is None.
             PROXY: HTTP proxy config, default is None.
@@ -39,6 +40,7 @@ class Config:
         self.mongodb = {}
         self.redis = {}
         self.platforms = {}
+        self.accounts = []
         self.heartbeat = {}
         self.http_server = None
         self.proxy = None
@@ -101,6 +103,7 @@ class Config:
         self.mongodb = update_fields.get("MONGODB", None)
         self.redis = update_fields.get("REDIS", None)
         self.platforms = update_fields.get("PLATFORMS", {})
+        self.accounts = update_fields.get("ACCOUNTS", [])
         self.heartbeat = update_fields.get("HEARTBEAT", {})
         self.http_server = update_fields.get("HTTP_SERVER", None)
         self.proxy = update_fields.get("PROXY", None)
