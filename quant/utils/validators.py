@@ -112,6 +112,8 @@ def string_field(data, field=None, required=True):
         2. If `field` is not exits and required is False, return None.
     """
     field_data = _field(data, field, required)
+    if not field_data:
+        return ""
     if not field_data and not required:
         return None
     return str(field_data)
