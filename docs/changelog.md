@@ -1,6 +1,15 @@
 # Change Logs
 
 
+### v0.1.8
+
+*Date: 2019/08/20*  
+*Summary:*
+- Upgrade config.PLATFORMS to config.ACCOUNTS.
+- validator for string field when field is None will return "".
+- logger module: printf stack information in exception.
+
+
 ### v0.1.7
 
 *Date: 2019/08/02*  
