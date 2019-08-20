@@ -32,9 +32,9 @@ class MyStrategy:
         """
         self.strategy = config.strategy
         self.platform = const.BITMEX
-        self.account = config.platforms.get(self.platform, {}).get("account")
-        self.access_key = config.platforms.get(self.platform, {}).get("access_key")
-        self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")
+        self.account = config.accounts[0]["account"]
+        self.access_key = config.accounts[0]["access_key"]
+        self.secret_key = config.accounts[0]["secret_key"]
         self.symbol = config.symbol
 
         self.buy_open_order_no = None  # 开仓做多订单号

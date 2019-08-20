@@ -6,14 +6,15 @@
         "password": "123456"
     },
     "PROXY": "http://127.0.0.1:1087",
-    "PLATFORMS": {
-        "okex_future": {
+    "ACCOUNTS": [
+        {
+            "platform": "okex_future",
             "account": "abc123@gmail.com",
             "access_key": "ACCESS KEY",
             "secret_key": "SECRET KEY",
             "passphrase": "abc123"
         }
-    },
+    ],
     "strategy": "my_test_strategy",
     "symbol": "BTC-USD-190705"
 }

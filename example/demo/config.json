@@ -6,13 +6,14 @@
         "password": "123456"
     },
     "PROXY": "http://127.0.0.1:1087",
-    "PLATFORMS": {
-        "binance": {
+    "ACCOUNTS": [
+        {
+            "platform": "binance",
             "account": "abc123@gmail.com",
             "access_key": "ACCESS KEY",
             "secret_key": "SECRET KEY"
         }
-    },
+    ],
     "strategy": "my_test_strategy",
     "symbol": "ETH/BTC"
 }

@@ -29,9 +29,9 @@ class MyStrategy:
         """
         self.strategy = config.strategy
         self.platform = const.COINSUPER_PRE
-        self.account = config.platforms.get(self.platform, {}).get("account")
-        self.access_key = config.platforms.get(self.platform, {}).get("access_key")
-        self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")
+        self.account = config.accounts[0]["account"]
+        self.access_key = config.accounts[0]["access_key"]
+        self.secret_key = config.accounts[0]["secret_key"]
         self.symbol = config.symbol
 
         self.order_no = None  # 创建订单的id

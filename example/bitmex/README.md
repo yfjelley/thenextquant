@@ -55,9 +55,9 @@ class MyStrategy:
         """
         self.strategy = config.strategy
         self.platform = const.BITMEX
-        self.account = config.platforms.get(self.platform, {}).get("account")
-        self.access_key = config.platforms.get(self.platform, {}).get("access_key")
-        self.secret_key = config.platforms.get(self.platform, {}).get("secret_key")
+        self.account = config.accounts[0]["account"]
+        self.access_key = config.accounts[0]["access_key"]
+        self.secret_key = config.accounts[0]["secret_key"]
         self.symbol = config.symbol
 
         self.buy_open_order_no = None  # 开仓做多订单号
@@ -218,7 +218,7 @@ if __name__ == '__main__':
 我们在配置文件里，加入了如下配置:
 - RABBITMQ 指定事件中心服务器，此配置需要和 [Market 行情服务](https://github.com/TheNextQuant/Market) 、[Asset 资产服务](https://github.com/TheNextQuant/Asset) 一致；
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
-- PLATFORMS 指定需要使用的交易账户，注意名字是 `bitmex` ；
+- ACCOUNTS 指定需要使用的交易账户，注意platform是 `bitmex` ；
 - strategy 策略的名称；
 - symbol 策略运行的交易对(合约)，比如: `XBTUSD` ；
 

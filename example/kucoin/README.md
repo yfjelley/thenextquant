@@ -56,9 +56,10 @@ class MyStrategy:
         """
         self.strategy = config.strategy
         self.platform = const.KUCOIN
-        self.account = config.platforms[self.platform]["account"]
-        self.access_key = config.platforms[self.platform]["access_key"]
-        self.secret_key = config.platforms[self.platform]["secret_key"]
+        self.account = config.accounts[0]["account"]
+        self.access_key = config.accounts[0]["access_key"]
+        self.secret_key = config.accounts[0]["secret_key"]
+        self.passphrase = config.accounts[0]["passphrase"]
         self.symbol = config.symbol
 
         self.order_no = None  # 创建订单的id
@@ -72,6 +73,7 @@ class MyStrategy:
             "account": self.account,
             "access_key": self.access_key,
             "secret_key": self.secret_key,
+            "passphrase": self.passphrase,
             "order_update_callback": self.on_event_order_update
         }
         self.trader = Trade(**cc)
@@ -173,7 +175,7 @@ if __name__ == '__main__':
 我们在配置文件里，加入了如下配置:
 - RABBITMQ 指定事件中心服务器，此配置需要和 [Market 行情服务](https://github.com/TheNextQuant/Market) 、[Asset 资产服务](https://github.com/TheNextQuant/Asset) 一致；
 - PROXY HTTP代理，翻墙，你懂的；（如果在不需要翻墙的环境运行，此参数可以去掉）
-- PLATFORMS 指定需要使用的交易账户，注意名字是 `kucoin` ；
+- ACCOUNTS 指定需要使用的交易账户，注意platform是 `kucoin` ；
 - strategy 策略的名称；
 - symbol 策略运行的交易对；
 
