@@ -34,7 +34,6 @@ class Quant:
         self._init_logger()
         self._init_db_instance()
         self._init_event_center()
-        self._init_http_server()
         self._do_heartbeat()
 
     def start(self):
@@ -91,43 +90,7 @@ class Quant:
             from quant.event import EventCenter
             self.event_center = EventCenter()
             self.loop.run_until_complete(self.event_center.connect())
-            config.initialize()
-
-    def _init_http_server(self):
-        """Initialize HTTP server."""
-        if not config.http_server:
-            return
-
-        import importlib
-        from aiohttp import web
-        from quant.utils.web import routes
-
-        # load apis.
-        for dir in config.http_server.get("apis"):
-            s = "import %s" % dir
-            exec(s)
-
-        # load middlewares.
-        middlewares = []
-        for m in config.http_server.get("middlewares", []):
-            x, y = m.rsplit(".", 1)
-            moudle = importlib.import_module(x)
-            m = getattr(moudle, y)
-            middlewares.append(m)
-
-        # print handlers..
-        for route in routes:
-            logger.info("registered api:", route.path, "method:", route.method, "handler:", route.handler, caller=self)
-
-        host = config.http_server.get("host", "localhost")
-        port = config.http_server.get("port")
-        app = web.Application(middlewares=middlewares)
-        app.add_routes(routes)
-        runner = web.AppRunner(app)
-        asyncio.get_event_loop().run_until_complete(runner.setup())
-        site = web.TCPSite(runner, host, port)
-        asyncio.get_event_loop().run_until_complete(site.start())
-        logger.info("http server listen port on:", "%s:%s" % (host, port), caller=self)
+            config.register_run_time_update()
 
     def _do_heartbeat(self):
         """Start server heartbeat."""
