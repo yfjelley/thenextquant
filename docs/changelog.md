@@ -1,6 +1,13 @@
 # Change Logs
 
 
+### v0.1.9
+
+*Date: 2019/08/24*  
+*Summary:*
+- Add [Huobi Future](../example/huobi_future) Trade module.
+
+
 ### v0.1.8
 
 *Date: 2019/08/20*  
