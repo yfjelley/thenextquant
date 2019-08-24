@@ -84,6 +84,7 @@ python src/main.py config.json
     - [Deribit 合约](example/deribit)
     - [Bitmex 合约](example/bitmex)
     - [Huobi 币币](example/huobi)
+    - [Huobi Future 合约](example/huobi_future)
     - [Coinsuper 币币](example/coinsuper)
     - [Coinsuper Premium 币币](example/coinsuper_pre)
     - [Kraken 币币/杠杆](example/kraken) 
