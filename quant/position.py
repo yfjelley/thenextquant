@@ -26,9 +26,9 @@ class Position:
         self.strategy = strategy
         self.symbol = symbol
         self.short_quantity = 0  # 空仓数量
-        self.short_avg_price = 0  # 空仓平均价格
+        self.short_avg_price = 0  # 空仓持仓平均价格
         self.long_quantity = 0  # 多仓数量
-        self.long_avg_price = 0  # 多仓平均价格
+        self.long_avg_price = 0  # 多仓持仓平均价格
         self.liquid_price = 0  # 预估爆仓价格
         self.utime = None  # 更新时间戳
 

@@ -310,8 +310,7 @@ class BitmexTrade(Websocket):
         elif order_type == ORDER_TYPE_MARKET:
             order_type_tmp = "Market"
         else:
-            logger.error("order_type error! order_type:", order_type, caller=self)
-            return None
+            return None, "order type error"
         quantity = abs(int(quantity))
         success, error = await self._rest_api.create_order(action_tmp, self._symbol, price, quantity, order_type_tmp,
                                                            trade_type)
