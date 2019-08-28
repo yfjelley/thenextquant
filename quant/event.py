@@ -470,7 +470,7 @@ class EventCenter:
         # Create a connection.
         try:
             transport, protocol = await aioamqp.connect(host=self._host, port=self._port, login=self._username,
-                                                        password=self._password)
+                                                        password=self._password, login_method="PLAIN")
         except Exception as e:
             logger.error("connection error:", e, caller=self)
             return
