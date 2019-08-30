@@ -52,8 +52,8 @@ class Order:
         avg_price: Average price that filled.
         order_type: Order type.
         trade_type: Trade type, only for future order.
-        ctime: Order create time, microsecond.
-        utime: Order update time, microsecond.
+        ctime: Order create time, millisecond.
+        utime: Order update time, millisecond.
     """
 
     def __init__(self, account=None, platform=None, strategy=None, order_no=None, symbol=None, action=None, price=0,

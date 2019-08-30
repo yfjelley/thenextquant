@@ -22,7 +22,7 @@ class Orderbook:
         symbol: Trade pair name, e.g. ETH/BTC.
         asks: Asks list, e.g. [[price, quantity], [...], ...]
         bids: Bids list, e.g. [[price, quantity], [...], ...]
-        timestamp: Update time, microsecond.
+        timestamp: Update time, millisecond.
     """
 
     def __init__(self, platform=None, symbol=None, asks=None, bids=None, timestamp=None):
@@ -61,7 +61,7 @@ class Trade:
         action: Trade action, BUY or SELL.
         price: Order place price.
         quantity: Order place quantity.
-        timestamp: Update time, microsecond.
+        timestamp: Update time, millisecond.
     """
 
     def __init__(self, platform=None, symbol=None, action=None, price=None, quantity=None, timestamp=None):
@@ -104,7 +104,7 @@ class Kline:
         low: Lowest price.
         close: Close price.
         volume: Total trade volume.
-        timestamp: Update time, microsecond.
+        timestamp: Update time, millisecond.
         kline_type: Kline type name, kline - 1min, kline_5min - 5min, kline_15min - 15min.
     """
 

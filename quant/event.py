@@ -188,7 +188,7 @@ class EventAsset(Event):
         platform: Exchange platform name, e.g. bitmex.
         account: Trading account name, e.g. test@gmail.com.
         assets: Asset details.
-        timestamp: Publish time, microsecond.
+        timestamp: Publish time, millisecond.
         update: If any update in this publish.
 
     * NOTE:
@@ -234,8 +234,8 @@ class EventOrder(Event):
         status: Order status.
         avg_price: Average price that filled.
         order_type: Order type, only for future order.
-        ctime: Order create time, microsecond.
-        utime: Order update time, microsecond.
+        ctime: Order create time, millisecond.
+        utime: Order update time, millisecond.
 
     * NOTE:
         Publisher: Strategy Server.
@@ -289,7 +289,7 @@ class EventKline(Event):
         low: Lowest price.
         close: Close price.
         volume: Trade volume.
-        timestamp: Publish time, microsecond.
+        timestamp: Publish time, millisecond.
         kline_type: Kline type, kline/kline_5min/kline_15min.
 
     * NOTE:
@@ -342,7 +342,7 @@ class EventOrderbook(Event):
         symbol: Trading pair, e.g. BTC/USD.
         asks: Asks, e.g. [[price, quantity], ... ]
         bids: Bids, e.g. [[price, quantity], ... ]
-        timestamp: Publish time, microsecond.
+        timestamp: Publish time, millisecond.
 
     * NOTE:
         Publisher: Market server.
@@ -380,7 +380,7 @@ class EventTrade(Event):
         action: Trading side, BUY or SELL.
         price: Order price.
         quantity: Order size.
-        timestamp: Publish time, microsecond.
+        timestamp: Publish time, millisecond.
 
     * NOTE:
         Publisher: Market server.

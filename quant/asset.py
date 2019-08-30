@@ -18,7 +18,7 @@ class Asset:
         platform: Exchange platform name, e.g. binance/bitmex.
         account: Trade account name, e.g. test@gmail.com.
         assets: Asset information, e.g. {"BTC": {"free": "1.1", "locked": "2.2", "total": "3.3"}, ... }
-        timestamp: Published time, microsecond.
+        timestamp: Published time, millisecond.
         update: If any update? True or False.
     """
 
