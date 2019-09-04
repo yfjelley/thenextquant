@@ -517,7 +517,7 @@ class HuobiFutureTrade:
                 self._update_order(order_info)
             SingleTask.run(self._init_success_callback, True, None)
 
-    @async_method_locker("process_binary.locker")
+    @async_method_locker("HuobiFutureTrade.process_binary.locker")
     async def process_binary(self, raw):
         """ 处理websocket上接收到的消息
         @param raw 原始的压缩数据

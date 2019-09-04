@@ -498,7 +498,7 @@ class CoinsuperPreTrade:
                 await self._update_order(order_info)
             order_nos = order_nos[50:]
 
-    @async_method_locker("order.locker")
+    @async_method_locker("CoinsuperPreTrade.order.locker")
     async def _update_order(self, order_info):
         """ Update order object.
 

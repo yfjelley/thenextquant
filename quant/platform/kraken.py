@@ -496,7 +496,7 @@ class KrakenTrade:
                 await self._update_order(order_no, order_info)
             order_nos = order_nos[50:]
 
-    @async_method_locker("order.locker")
+    @async_method_locker("KrakenTrade.order.locker")
     async def _update_order(self, order_no, order_info):
         """ Update order object.
 

@@ -519,7 +519,7 @@ class KucoinTrade:
                 return
             await self._update_order(success)
 
-    @async_method_locker("order.locker")
+    @async_method_locker("KucoinTrade.order.locker")
     async def _update_order(self, order_info):
         """ Update order object.
 

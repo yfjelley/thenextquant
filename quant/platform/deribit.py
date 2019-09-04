@@ -308,14 +308,14 @@ class DeribitTrade(Websocket):
             logger.error("data:", data, "error:", error, caller=self)
         return success, error
 
-    @async_method_locker("generate_query_id.locker")
+    @async_method_locker("DeribitTrade.generate_query_id.locker")
     async def _generate_query_id(self):
         """ 生成query id，加锁，确保每个请求id唯一
         """
         self._query_id += 1
         return self._query_id
 
-    @async_method_locker("process.locker")
+    @async_method_locker("DeribitTrade.process.locker")
     async def process(self, msg):
         """ 处理websocket消息
         """

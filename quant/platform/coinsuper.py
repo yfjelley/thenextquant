@@ -420,7 +420,7 @@ class CoinsuperTrade:
                 await self._update_order(order_info)
             order_nos = order_nos[50:]
 
-    @async_method_locker("order.locker")
+    @async_method_locker("CoinsuperTrade.order.locker")
     async def _update_order(self, order_info):
         """ 处理委托单更新
         @param order_info 委托单详情

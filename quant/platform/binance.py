@@ -540,7 +540,7 @@ class BinanceTrade(Websocket):
                 order_nos.append(order_no)
             return order_nos, None
 
-    @async_method_locker("process.locker")
+    @async_method_locker("BinanceTrade.process.locker")
     async def process(self, msg):
         """ Process message that received from Websocket connection.
 

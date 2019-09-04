@@ -413,7 +413,7 @@ class GateTrade:
                 return
             await self._update_order(success["order"])
 
-    @async_method_locker("order.locker")
+    @async_method_locker("GateTrade.order.locker")
     async def _update_order(self, order_info):
         """ Update order object.
 

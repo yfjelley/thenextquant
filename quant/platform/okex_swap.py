@@ -349,7 +349,7 @@ class OKExSwapTrade(Websocket):
         }
         await self.ws.send_json(data)
 
-    @async_method_locker("process_binary.locker")
+    @async_method_locker("OKExSwapTrade.process_binary.locker")
     async def process_binary(self, raw):
         """ Process binary message that receive from websocket.
 

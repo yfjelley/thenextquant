@@ -269,7 +269,7 @@ class OKExTrade(Websocket):
         }
         await self.ws.send_json(data)
 
-    @async_method_locker("process_binary.locker")
+    @async_method_locker("OKExTrade.process_binary.locker")
     async def process_binary(self, raw):
         """ 处理websocket上接收到的消息
         @param raw 原始的压缩数据

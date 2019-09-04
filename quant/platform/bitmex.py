@@ -233,7 +233,7 @@ class BitmexTrade(Websocket):
         }
         await self.ws.send_json(data)
 
-    @async_method_locker("process.locker")
+    @async_method_locker("BitmexTrade.process.locker")
     async def process(self, msg):
         """ 处理websocket上接收到的消息
         """

@@ -323,7 +323,7 @@ class HuobiTrade(Websocket):
         }
         await self.ws.send_json(params)
 
-    @async_method_locker("process_binary.locker")
+    @async_method_locker("HuobiTrade.process_binary.locker")
     async def process_binary(self, raw):
         """ 处理websocket上接收到的消息
         @param raw 原始的压缩数据
