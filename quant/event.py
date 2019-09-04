@@ -171,11 +171,12 @@ class EventHeartbeat(Event):
         name = "EVENT_HEARTBEAT"
         exchange = "Heartbeat"
         queue = "{server_id}.{exchange}".format(server_id=server_id, exchange=exchange)
+        routing_key = "{server_id}".format(server_id=server_id)
         data = {
             "server_id": server_id,
             "count": count
         }
-        super(EventHeartbeat, self).__init__(name, exchange, queue, data=data)
+        super(EventHeartbeat, self).__init__(name, exchange, queue, routing_key, data=data)
 
     def parse(self):
         return self._data
