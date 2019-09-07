@@ -111,6 +111,8 @@ class HuobiRestAPI:
             "symbol": symbol,
             "type": order_type
         }
+        if order_type == "buy-market" or order_type == "sell-market":
+            info.pop("price")
         success, error = await self.request("POST", "/v1/order/orders/place", body=info)
         return success, error
 
