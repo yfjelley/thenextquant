@@ -54,6 +54,7 @@ class KLineData:
             "h": kline.high,
             "l": kline.low,
             "c": kline.close,
+            "v": kline.volume,
             "t": kline.timestamp
         }
         kline_id = await self._db.insert(data, cursor=cursor)
