@@ -150,7 +150,7 @@ class OKExFutureRestAPI:
     async def get_kline(self, instrument_id, start, end, granularity=60*60):
         uri = "/api/futures/v3/instruments/{instrument_id}/candles".format(instrument_id=instrument_id)
         params = {'granularity': granularity, 'start': start, 'end': end}
-        success, error = await self.request("GET", uri, params=params, auth=True)
+        success, error = await self.request("GET", uri, params=params, auth=False)
         return success, error
 
     async def request(self, method, uri, params=None, body=None, headers=None, auth=False):
