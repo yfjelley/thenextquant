@@ -38,6 +38,9 @@ const.MARKET_TYPE_ORDERBOOK  # 订单薄(Orderbook)
 const.MARKET_TYPE_KLINE  # 1分钟K线(KLine)
 const.MARKET_TYPE_KLINE_5M  # 5分钟K线(KLine)
 const.MARKET_TYPE_KLINE_15M  # 15分钟K线(KLine)
+const.MARKET_TYPE_KLINE_1H
+const.MARKET_TYPE_KLINE_4H
+const.MARKET_TYPE_KLINE_1DAY
 const.MARKET_TYPE_TRADE  # 成交(KLine)
 ```
 

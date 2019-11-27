@@ -310,6 +310,15 @@ class EventKline(Event):
         elif kline_type == const.MARKET_TYPE_KLINE_15M:
             name = "EVENT_KLINE_15MIN"
             exchange = "Kline.15min"
+        elif kline_type == const.MARKET_TYPE_KLINE_1H:
+            name = "EVENT_KLINE_1H"
+            exchange = "Kline.1h"
+        elif kline_type == const.MARKET_TYPE_KLINE_4H:
+            name = "EVENT_KLINE_4H"
+            exchange = "Kline.4h"
+        elif kline_type == const.MARKET_TYPE_KLINE_1DAY:
+            name = "EVENT_KLINE_1DAY"
+            exchange = "Kline.1day"
         else:
             logger.error("kline_type error! kline_type:", kline_type, caller=self)
             return
@@ -485,7 +494,7 @@ class EventCenter:
         logger.info("Rabbitmq initialize success!", caller=self)
 
         # Create default exchanges.
-        exchanges = ["Orderbook", "Trade", "Kline", "Kline.5min", "Kline.15min", "Config", "Heartbeat", "Asset",
+        exchanges = ["Orderbook", "Trade", "Kline", "Kline.5min", "Kline.15min", "Kline.1h", "Kline.4h", "Kline.1day", "Config", "Heartbeat", "Asset",
                      "Order", ]
         for name in exchanges:
             await self._channel.exchange_declare(exchange_name=name, type_name="topic")
