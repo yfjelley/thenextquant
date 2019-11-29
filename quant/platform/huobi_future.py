@@ -292,6 +292,17 @@ class HuobiFutureRestAPI:
         success, error = await self.request("POST", uri, body=body, auth=True)
         return success, error
 
+    async def get_kline(self, symbol, size=300, period="5min"):
+        uri = "/market/history/kline"
+        url_params = {'symbol': symbol, "period": period, "size": size}
+        if url_params:
+            query = "&".join(["{}={}".format(k, url_params[k]) for k in sorted(url_params.keys())])
+            uri += "?" + query
+        url = urljoin(self._host, uri)
+
+        success, error = await self.request("GET", url, params='', auth=False)
+        return success, error
+
     async def request(self, method, uri, params=None, body=None, headers=None, auth=False):
         """ Do HTTP request.
 
