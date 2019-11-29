@@ -16,6 +16,7 @@ BITFINEX = "bitfinex"
 BITMEX = "bitmex"  # BitMEX https://www.bitmex.com/
 BITSTAMP = "bitstamp"
 COINBASE_PRO = "coinbase_pro"  # Coinbase Pro https://pro.coinbase.com/
+COINBASE = "coinbase"  # Coinbase Pro https://pro.coinbase.com/
 COINSUPER = "coinsuper"  # Coinsuper https://www.coinsuper.com/
 COINSUPER_PRE = "coinsuper_pre"  # Coinsuper Premium https://premium.coinsuper.com
 DERIBIT = "deribit"  # Deribit https://www.deribit.com/
@@ -32,6 +33,7 @@ OKEX = "okex"  # OKEx SPOT https://www.okex.me/spot/trade
 OKEX_MARGIN = "okex_margin"  # OKEx MARGIN https://www.okex.me/spot/marginTrade
 OKEX_FUTURE = "okex_future"  # OKEx FUTURE https://www.okex.me/future/trade
 OKEX_SWAP = "okex_swap"  # OKEx SWAP https://www.okex.me/future/swap
+
 
 
 # Market Types
