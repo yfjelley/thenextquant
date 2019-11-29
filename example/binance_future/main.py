@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 """
-Huobi Future 模块使用演示
+Binance Future 模块使用演示
 
 > 策略执行的几个步骤:
     1. 在当前盘口价差10美金的位置，挂一个买入10手的委托单，即开仓大小为10；
@@ -31,14 +31,11 @@ class MyStrategy:
         """ 初始化
         """
         self.strategy = config.strategy
-        self.platform = const.HUOBI_FUTURE
+        self.platform = const.BINANCE_FUTURE
         self.account = config.accounts[0]["account"]
         self.access_key = config.accounts[0]["access_key"]
         self.secret_key = config.accounts[0]["secret_key"]
         self.symbol = config.symbol
-        self.contract_type = config.contract_type
-        self.contract_code = config.contract_code
-        self.symbol_raw = config.symbol_raw
 
         self.buy_open_order_no = None  # 开仓做多订单号
         self.buy_open_quantity = "10"  # 开仓数量(USD)
@@ -52,8 +49,6 @@ class MyStrategy:
             "strategy": self.strategy,
             "platform": self.platform,
             "symbol": self.symbol,
-            "contract_type": self.contract_type,
-            "contract_code": self.contract_code,
             "account": self.account,
             "access_key": self.access_key,
             "secret_key": self.secret_key,
@@ -63,7 +58,7 @@ class MyStrategy:
         self.trader = Trade(**cc)
 
         # 订阅行情
-        Market(const.MARKET_TYPE_ORDERBOOK, self.platform, self.symbol_raw, self.on_event_orderbook_update)
+        Market(const.MARKET_TYPE_ORDERBOOK, self.platform, self.symbol, self.on_event_orderbook_update)
 
         # 注册系统循环回调
         LoopRunTask.register(self.on_ticker, 1)  # 每隔1秒执行一次回调

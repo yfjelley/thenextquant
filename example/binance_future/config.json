@@ -8,15 +8,12 @@
     "PROXY": "http://127.0.0.1:1087",
     "ACCOUNTS": [
         {
-            "platform": "huobi_future",
+            "platform": "binance_future",
             "account": "abc123@gmail.com",
             "access_key": "ACCESS KEY",
             "secret_key": "SECRET KEY"
         }
     ],
     "strategy": "my_test_strategy",
-    "symbol": "ETH",
-    "contract_code": "ETH190906",
-    "contract_type": "next_week",
-    "symbol_raw": "ETH_NW"
+    "symbol": "BTCUSDT"
 }
