@@ -462,7 +462,7 @@ class HuobiTrade(Websocket):
             status = ORDER_STATUS_SUBMITTED
         elif state == "submitted":
             status = ORDER_STATUS_SUBMITTED
-        elif state == "partical-filled":
+        elif state == "partial-filled":
             status = ORDER_STATUS_PARTIAL_FILLED
         elif state == "filled":
             status = ORDER_STATUS_FILLED

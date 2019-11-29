@@ -173,8 +173,7 @@ class Market:
         elif market_type == const.MARKET_TYPE_TRADE:
             from quant.event import EventTrade
             EventTrade(platform, symbol).subscribe(callback, multi)
-        elif market_type in [const.MARKET_TYPE_KLINE, const.MARKET_TYPE_KLINE_5M, const.MARKET_TYPE_KLINE_15M,\
-                             const.MARKET_TYPE_KLINE_1H, const.MARKET_TYPE_KLINE_4H, const.MARKET_TYPE_KLINE_1DAY]:
+        elif market_type in [const.MARKET_TYPE_KLINE, const.MARKET_TYPE_KLINE_5M, const.MARKET_TYPE_KLINE_15M]:
             from quant.event import EventKline
             EventKline(platform, symbol, kline_type=market_type).subscribe(callback, multi)
         else:

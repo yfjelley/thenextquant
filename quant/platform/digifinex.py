@@ -1,23 +1,23 @@
 # -*- coding:utf-8 -*-
 
 """
-Gate.io Trade module.
-https://gateio.news/api2#spot
+Digifinex Trade module.
+https://docs.digifinex.vip/zh-cn/v3
 
 Author: HuangTao
-Date:   2019/07/15
+Date:   2019/11/05
 Email:  huangtao@ifclover.com
 """
 
 import copy
 import hmac
 import hashlib
-import urllib
 from urllib.parse import urljoin
 
+from quant.utils import tools
 from quant.error import Error
 from quant.utils import logger
-from quant.const import GATE
+from quant.const import DIGIFINEX
 from quant.order import Order
 from quant.asset import Asset, AssetSubscribe
 from quant.tasks import SingleTask, LoopRunTask
@@ -28,10 +28,10 @@ from quant.order import ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED, ORD
     ORDER_STATUS_CANCELED, ORDER_STATUS_FAILED
 
 
-__all__ = ("GateRestAPI", "GateTrade", )
+__all__ = ("DigifinexRestAPI", "DigifinexTrade", )
 
 
-class GateRestAPI:
+class DigifinexRestAPI:
     """ Gate.io REST API client.
 
     Attributes:
@@ -46,15 +46,138 @@ class GateRestAPI:
         self._access_key = access_key
         self._secret_key = secret_key
 
-    async def get_user_account(self):
-        """ Get user account information.
+    async def ping(self):
+        """Ping to server.
 
         Returns:
             success: Success results, otherwise it's None.
             error: Error information, otherwise it's None.
         """
-        uri = "/api2/1/private/balances"
-        success, error = await self.request("POST", uri)
+        uri = "/v3/ping"
+        success, error = await self.request("GET", uri)
+        return success, error
+
+    async def server_time(self):
+        """Get server current time.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/time"
+        success, error = await self.request("GET", uri)
+        return success, error
+
+    async def get_markets(self):
+        """Get all markets information.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/markets"
+        success, error = await self.request("GET", uri)
+        return success, error
+
+    async def get_ticker(self, symbol=None):
+        """Get ticker information.
+
+        Args:
+            symbol: Symbol name string, e.g. `btc_usdt`. default `None` will return all tickers.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/ticker"
+        params = {}
+        if symbol:
+            params["symbol"] = symbol
+        success, error = await self.request("GET", uri, params)
+        return success, error
+
+    async def get_orderbook(self, symbol, limit=10):
+        """Get orderbook information.
+
+        Args:
+            symbol: Symbol name string, e.g. `btc_usdt`.
+            limit: Orderbook size to return, default is `10`, min size `10`, max size `150`.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/order_book"
+        params = {
+            "symbol": symbol,
+            "limit": limit
+        }
+        success, error = await self.request("GET", uri, params)
+        return success, error
+
+    async def get_trades(self, symbol, limit=100):
+        """Get latest trade information.
+
+        Args:
+            symbol: Symbol name string, e.g. `btc_usdt`.
+            limit: latest trade size to return, default is `100`, min size `10`, max size `500`.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/trades"
+        params = {
+            "symbol": symbol,
+            "limit": limit
+        }
+        success, error = await self.request("GET", uri, params)
+        return success, error
+
+    async def get_kline(self, symbol, period="1", start=None, end=None):
+        """Get kline information.
+
+        Args:
+            symbol: Symbol name string, e.g. `btc_usdt`.
+            period: The period of kline, default is `1` minute, available value: 1,5,15,30,60,240,720,1D,1W.
+            start: Start timestamp.
+            end: End timestamp.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/kline"
+        params = {
+            "symbol": symbol,
+            "period": period
+        }
+        if start and end:
+            params["start_time"] = start
+            params["end_time"] = end
+        success, error = await self.request("GET", uri, params)
+        return success, error
+
+    async def get_symbols(self):
+        """Get all symbols information.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/spot/symbols"
+        success, error = await self.request("GET", uri)
+        return success, error
+
+    async def get_user_account(self):
+        """Get account asset information.
+
+        Returns:
+            success: Success results, otherwise it's None.
+            error: Error information, otherwise it's None.
+        """
+        uri = "/v3/spot/assets"
+        success, error = await self.request("GET", uri, auth=True)
         return success, error
 
     async def create_order(self, action, symbol, price, quantity):
@@ -69,98 +192,57 @@ class GateRestAPI:
             success: Success results, otherwise it's None.
             error: Error information, otherwise it's None.
         """
+        uri = "/v3/spot/order/new"
         if action == ORDER_ACTION_BUY:
-            uri = "/api2/1/private/buy"
+            order_type = "buy"
         elif action == ORDER_ACTION_SELL:
-            uri = "/api2/1/private/sell"
+            order_type = "sell"
         else:
             return None, "action error"
         data = {
-            "currencyPair": symbol,
-            "rate": price,
-            "amount": quantity
+            "symbol": symbol,
+            "type": order_type,
+            "amount": quantity,
+            "price": price
         }
-        success, error = await self.request("POST", uri, data)
+        success, error = await self.request("POST", uri, body=data, auth=True)
         return success, error
 
-    async def revoke_order(self, symbol, order_no):
-        """ Cancelling an unfilled order.
+    async def revoke_order(self, *order_no):
+        """ Cancelling unfilled order(s).
         Args:
-            symbol: Symbol name, e.g. ltc_btc.
-            order_no: Order id.
+            order_no: Order id or id list.
 
         Returns:
             success: Success results, otherwise it's None.
             error: Error information, otherwise it's None.
         """
-        uri = "/api2/1/private/cancelOrder"
+        uri = "/v3/order/cancel"
 
         data = {
-            "currencyPair": symbol,
-            "orderNumber": order_no
+            "order_id": ",".join(order_no)
         }
-        success, error = await self.request("POST", uri, data)
+        success, error = await self.request("POST", uri, body=data, auth=True)
         return success, error
 
-    async def revoke_orders(self, symbol, order_nos):
-        """ Cancelling multiple unfilled orders.
-        Args:
-            symbol: Symbol name, e.g. ltc_btc.
-            order_nos: Order id list.
-
-        Returns:
-            success: Success results, otherwise it's None.
-            error: Error information, otherwise it's None.
-        """
-        uri = "/api2/1/private/cancelOrders"
-        orders_json = []
-        for order_no in order_nos:
-            orders_json.append({"currencyPair": symbol, "orderNumber": order_no})
-
-        data = {
-            "orders_json": orders_json
-        }
-        success, error = await self.request("POST", uri, data)
-        return success, error
-
-    async def revoke_orders_all(self, symbol, order_type=-1):
-        """ Cancelling all unfilled orders.
-        Args:
-            symbol: Symbol name, e.g. ltc_btc.
-            order_type: Order type (0: sell,1: buy,-1: unlimited).
-
-        Returns:
-            success: Success results, otherwise it's None.
-            error: Error information, otherwise it's None.
-        """
-        uri = "/api2/1/private/cancelAllOrders"
-        data = {
-            "currencyPair": symbol,
-            "type": order_type
-        }
-        success, error = await self.request("POST", uri, data)
-        return success, error
-
-    async def get_order_status(self, symbol, order_no):
+    async def get_order_status(self, order_no):
         """ Get order details by order id.
 
         Args:
-            symbol: Symbol name, e.g. ltc_btc.
             order_no: Order id.
 
         Returns:
             success: Success results, otherwise it's None.
             error: Error information, otherwise it's None.
         """
-        uri = "/api2/1/private/getOrder"
-        data = {
-            "currencyPair": symbol,
-            "orderNumber": order_no
+        uri = "/v3/spot/order"
+        params = {
+            "order_id": order_no
         }
-        success, error = await self.request("POST", uri, data)
+        success, error = await self.request("GET", uri, params, auth=True)
         return success, error
 
-    async def get_open_orders(self, symbol):
+    async def get_open_orders(self, symbol=None):
         """ Get all open order information.
         Args:
             symbol: Symbol name, e.g. ltc_btc.
@@ -169,53 +251,57 @@ class GateRestAPI:
             success: Success results, otherwise it's None.
             error: Error information, otherwise it's None.
         """
-        uri = "/api2/1/private/openOrders"
-        body = {
-            "currencyPair": symbol
-        }
-        success, error = await self.request("POST", uri, body)
+        uri = "/v3/spot/order/current"
+        params = {}
+        if symbol:
+            params["symbol"] = symbol
+        success, error = await self.request("GET", uri, params, auth=True)
         return success, error
 
-    async def request(self, method, uri, body=None):
+    async def request(self, method, uri, params=None, headers=None, body=None, auth=False):
         """ Do HTTP request.
 
         Args:
             method: HTTP request method. GET, POST, DELETE, PUT.
             uri: HTTP request uri.
-            body:   HTTP request body.
+            params: HTTP query params.
+            headers: HTTP request header.
+            body: HTTP request body.
+            auth: If required signature.
 
         Returns:
             success: Success results, otherwise it's None.
             error: Error information, otherwise it's None.
         """
         url = urljoin(self._host, uri)
-        if body:
-            query = "&".join(["=".join([str(k), str(v)]) for k, v in body.items()])
+        if params:
+            query = "&".join(["=".join([str(k), str(v)]) for k, v in params.items()])
+            url += "?" + query
         else:
             query = ""
-        signature = hmac.new(self._secret_key.encode(), query.encode(), hashlib.sha512).hexdigest()
-        headers = {
-            "Content-type": "application/x-www-form-urlencoded",
-            "KEY": self._access_key,
-            "SIGN": signature
-        }
-        b = urllib.parse.urlencode(body) if body else ""
-        _, success, error = await AsyncHttpRequests.fetch(method, url, body=b, headers=headers, timeout=10)
+        if auth:
+            signature = hmac.new(self._secret_key.encode(), query.encode(), hashlib.sha256).hexdigest()
+            headers = {
+                "ACCESS-TIMESTAMP": str(tools.get_cur_timestamp()),
+                "ACCESS-KEY": self._access_key,
+                "ACCESS-SIGN": signature
+            }
+        _, success, error = await AsyncHttpRequests.fetch(method, url, body=body, headers=headers, timeout=10)
         if error:
             return None, error
-        if not success.get("result"):
+        if success.get("code") != 0:
             return None, success
         return success, None
 
 
-class GateTrade:
+class DigifinexTrade:
     """ Gate.io Trade module. You can initialize trade object with some attributes in kwargs.
 
     Attributes:
         account: Account name for this trade exchange.
         strategy: What's name would you want to created for you strategy.
         symbol: Symbol name for your trade.
-        host: HTTP request host. (default is "https://api.gateio.co")
+        host: HTTP request host. (default is "https://openapi.digifinex.vip")
         access_key: Account's ACCESS KEY.
         secret_key Account's SECRET KEY.
         asset_update_callback: You can use this param to specific a async callback function when you initializing Trade
@@ -240,20 +326,18 @@ class GateTrade:
         if not kwargs.get("symbol"):
             e = Error("param symbol miss")
         if not kwargs.get("host"):
-            kwargs["host"] = "https://api.gateio.co"
+            kwargs["host"] = "https://openapi.digifinex.vip"
         if not kwargs.get("access_key"):
             e = Error("param access_key miss")
         if not kwargs.get("secret_key"):
             e = Error("param secret_key miss")
         if e:
             logger.error(e, caller=self)
-            if kwargs.get("init_success_callback"):
-                SingleTask.run(kwargs["init_success_callback"], False, e)
-            return
+            SingleTask.run(kwargs["init_success_callback"], False, e)
 
         self._account = kwargs["account"]
         self._strategy = kwargs["strategy"]
-        self._platform = GATE
+        self._platform = DIGIFINEX
         self._symbol = kwargs["symbol"]
         self._host = kwargs["host"]
         self._access_key = kwargs["access_key"]
@@ -269,7 +353,7 @@ class GateTrade:
         self._orders = {}  # Order details. e.g. {order_no: order-object, ... }
 
         # Initialize our REST API client.
-        self._rest_api = GateRestAPI(self._host, self._access_key, self._secret_key)
+        self._rest_api = DigifinexRestAPI(self._host, self._access_key, self._secret_key)
 
         # Create a loop run task to check order status.
         LoopRunTask.register(self._check_order_update, self._check_order_interval)
@@ -298,13 +382,11 @@ class GateTrade:
         if error:
             e = Error("get open order nos failed: {}".format(error))
             logger.error(e, caller=self)
-            if self._init_success_callback:
-                SingleTask.run(self._init_success_callback, False, e)
+            SingleTask.run(self._init_success_callback, False, e)
             return
-        for order_info in result["orders"]:
+        for order_info in result["data"]:
             await self._update_order(order_info)
-        if self._init_success_callback:
-            SingleTask.run(self._init_success_callback, True, None)
+        SingleTask.run(self._init_success_callback, True, None)
 
     async def create_order(self, action, price, quantity, order_type=ORDER_TYPE_LIMIT, **kwargs):
         """ Create an order.
@@ -322,9 +404,7 @@ class GateTrade:
         success, error = await self._rest_api.create_order(action, self._raw_symbol, price, quantity)
         if error:
             return None, error
-        if not success["result"]:
-            return None, success
-        order_no = str(success["orderNumber"])
+        order_no = success["order_id"]
         infos = {
             "account": self._account,
             "platform": self._platform,
@@ -338,8 +418,7 @@ class GateTrade:
         }
         order = Order(**infos)
         self._orders[order_no] = order
-        if self._order_update_callback:
-            SingleTask.run(self._order_update_callback, copy.copy(order))
+        SingleTask.run(self._order_update_callback, copy.copy(order))
         return order_no, None
 
     async def revoke_order(self, *order_nos):
@@ -355,11 +434,15 @@ class GateTrade:
         """
         # If len(order_nos) == 0, you will cancel all orders for this symbol(initialized in Trade object).
         if len(order_nos) == 0:
-            success, error = await self._rest_api.revoke_orders_all(self._raw_symbol)
+            result, error = await self._rest_api.get_open_orders(self._raw_symbol)
             if error:
                 return False, error
-            if not success["result"]:
-                return False, success
+            order_nos = []
+            for order_info in result["data"]:
+                order_nos.append(order_info["order_id"])
+            success, error = await self._rest_api.revoke_order(order_nos)
+            if error:
+                return False, error
             return True, None
 
         # If len(order_nos) == 1, you will cancel an order.
@@ -367,18 +450,14 @@ class GateTrade:
             success, error = await self._rest_api.revoke_order(self._raw_symbol, order_nos[0])
             if error:
                 return order_nos[0], error
-            if not success["result"]:
-                return False, success
             else:
                 return order_nos[0], None
 
         # If len(order_nos) > 1, you will cancel multiple orders.
         if len(order_nos) > 1:
-            success, error = await self._rest_api.revoke_orders(self._raw_symbol, order_nos)
+            success, error = await self._rest_api.revoke_order(order_nos)
             if error:
                 return False, error
-            if not success["result"]:
-                return False, success
             return True, None
 
     async def get_open_order_nos(self):
@@ -394,11 +473,9 @@ class GateTrade:
         success, error = await self._rest_api.get_open_orders(self._raw_symbol)
         if error:
             return False, error
-        if not success["result"]:
-            return False, success
         order_nos = []
-        for order_info in success["orders"]:
-            order_nos.append(str(order_info["orderNumber"]))
+        for order_info in success["data"]:
+            order_nos.append(order_info["order_id"])
         return order_nos, None
 
     async def _check_order_update(self, *args, **kwargs):
@@ -408,10 +485,10 @@ class GateTrade:
         if not order_nos:
             return
         for order_no in order_nos:
-            success, error = await self._rest_api.get_order_status(self._raw_symbol, order_no)
-            if error or not success["result"]:
+            success, error = await self._rest_api.get_order_status(order_no)
+            if error:
                 return
-            await self._update_order(success["order"])
+            await self._update_order(success["data"][0])
 
     @async_method_locker("GateTrade.order.locker")
     async def _update_order(self, order_info):
@@ -423,8 +500,8 @@ class GateTrade:
         if not order_info:
             return
         status_updated = False
-        order_no = str(order_info["orderNumber"])
-        state = order_info["status"]
+        order_no = str(order_info["order_id"])
+        status = order_info["status"]  # 订单状态，0-未成交，1-部分成交，2-完全成交，3-已撤销未成交，4-已撤销部分成交
 
         order = self._orders.get(order_no)
         if not order:
@@ -435,48 +512,42 @@ class GateTrade:
                 "order_no": order_no,
                 "action": ORDER_ACTION_BUY if order_info["type"] == "buy" else ORDER_ACTION_SELL,
                 "symbol": self._symbol,
-                "price": order_info["rate"],
+                "price": order_info["price"],
                 "quantity": order_info["amount"],
                 "remain": order_info["amount"],
-                "avg_price": order_info["filledRate"]
+                "avg_price": order_info["avg_price"]
             }
             order = Order(**info)
             self._orders[order_no] = order
 
-        if state == "open":
-            filled_amount = float(order_info["filledAmount"])
-            if filled_amount == 0:
-                state = ORDER_STATUS_SUBMITTED
-                if order.status != state:
-                    order.status = ORDER_STATUS_SUBMITTED
-                    status_updated = True
-            else:
-                remain = float(order.quantity) - filled_amount
-                if order.remain != remain:
-                    order.status = ORDER_STATUS_PARTIAL_FILLED
-                    order.remain = remain
-                    status_updated = True
-        elif state == "closed":
+        if status == 0:
+            if order.status != ORDER_STATUS_SUBMITTED:
+                order.status = ORDER_STATUS_SUBMITTED
+                status_updated = True
+        elif status == 1:
+            remain = float(order_info["amount"]) - float(order_info["executed_amount"])
+            if order.remain != remain:
+                order.remain = remain
+                order.status = ORDER_STATUS_PARTIAL_FILLED
+                status_updated = True
+        elif status == 2:
             order.status = ORDER_STATUS_FILLED
             order.remain = 0
             status_updated = True
-        elif state == "cancelled":
+        elif status == 3 or status == 4:
             order.status = ORDER_STATUS_CANCELED
-            filled_amount = float(order_info["filledAmount"])
-            remain = float(order.quantity) - filled_amount
-            if order.remain != remain:
-                order.remain = remain
+            remain = float(order_info["amount"]) - float(order_info["executed_amount"])
+            order.remain = remain
             status_updated = True
         else:
             logger.warn("state error! order_info:", order_info, caller=self)
             return
 
         if status_updated:
-            order.avg_price = order_info["filledRate"]
-            order.ctime = int(order_info["timestamp"] * 1000)
-            order.utime = int(order_info["timestamp"] * 1000)
-            if self._order_update_callback:
-                SingleTask.run(self._order_update_callback, copy.copy(order))
+            order.avg_price = order_info["avg_price"]
+            order.ctime = int(order_info["created_date"] * 1000)
+            order.utime = int(order_info["finished_date"] * 1000)
+            SingleTask.run(self._order_update_callback, copy.copy(order))
 
         # Delete order that already completed.
         if order.status in [ORDER_STATUS_FAILED, ORDER_STATUS_CANCELED, ORDER_STATUS_FILLED]:

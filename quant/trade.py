@@ -8,6 +8,8 @@ Date:   2019/04/21
 Email:  huangtao@ifclover.com
 """
 
+import copy
+
 from quant import const
 from quant.error import Error
 from quant.utils import logger
@@ -22,15 +24,15 @@ class Trade:
     """ Trade Module.
 
     Attributes:
-        strategy: What's name would you want to created for you strategy.
-        platform: Exchange platform name. e.g. binance/okex/bitmex.
-        symbol: Symbol name for your trade. e.g. BTC/USDT.
+        strategy: What's name would you want to created for your strategy.
+        platform: Exchange platform name. e.g. `binance` / `okex` / `bitmex`.
+        symbol: Symbol name for your trade. e.g. `BTC/USDT`.
         host: HTTP request host.
         wss: Websocket address.
         account: Account name for this trade exchange.
         access_key: Account's ACCESS KEY.
         secret_key: Account's SECRET KEY.
-        passphrase: API KEY Passphrase. (Only for OKEx)
+        passphrase: API KEY Passphrase. (Only for `OKEx`)
         asset_update_callback: You can use this param to specific a async callback function when you initializing Trade
             object. `asset_update_callback` is like `async def on_asset_update_callback(asset: Asset): pass` and this
             callback function will be executed asynchronous when received AssetEvent.
@@ -41,7 +43,7 @@ class Trade:
             Trade object. `position_update_callback` is like `async def on_position_update_callback(position: Position): pass`
             and this callback function will be executed asynchronous when position updated.
         init_success_callback: You can use this param to specific a async callback function when you initializing Trade
-            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error): pass`
+            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error, **kwargs): pass`
             and this callback function will be executed asynchronous after Trade module object initialized successfully.
     """
 
@@ -63,6 +65,7 @@ class Trade:
         kwargs["position_update_callback"] = self._on_position_update_callback
         kwargs["init_success_callback"] = self._on_init_success_callback
 
+        self._raw_params = copy.copy(kwargs)
         self._order_update_callback = order_update_callback
         self._position_update_callback = position_update_callback
         self._init_success_callback = init_success_callback
@@ -81,6 +84,8 @@ class Trade:
             from quant.platform.bitmex import BitmexTrade as T
         elif platform == const.BINANCE:
             from quant.platform.binance import BinanceTrade as T
+        elif platform == const.BINANCE_FUTURE:
+            from quant.platform.binance_future import BinanceFutureTrade as T
         elif platform == const.HUOBI:
             from quant.platform.huobi import HuobiTrade as T
         elif platform == const.COINSUPER:
@@ -95,6 +100,8 @@ class Trade:
             from quant.platform.kucoin import KucoinTrade as T
         elif platform == const.HUOBI_FUTURE:
             from quant.platform.huobi_future import HuobiFutureTrade as T
+        elif platform == const.DIGIFINEX:
+            from quant.platform.digifinex import DigifinexTrade as T
         else:
             logger.error("platform error:", platform, caller=self)
             e = Error("platform error")
@@ -123,10 +130,10 @@ class Trade:
         """ Create an order.
 
         Args:
-            action: Trade direction, BUY or SELL.
+            action: Trade direction, `BUY` or `SELL`.
             price: Price of each contract.
             quantity: The buying or selling quantity.
-            order_type: Specific type of order, LIMIT or MARKET. (default LIMIT)
+            order_type: Specific type of order, `LIMIT` or `MARKET`. (default is `LIMIT`)
 
         Returns:
             order_no: Order ID if created successfully, otherwise it's None.
@@ -207,4 +214,10 @@ class Trade:
             error: `Error object` if initialize Trade module failed, otherwise `None`.
         """
         if self._init_success_callback:
-            await self._init_success_callback(success, error)
+            params = {
+                "strategy": self._raw_params["strategy"],
+                "platform": self._raw_params["platform"],
+                "symbol": self._raw_params["symbol"],
+                "account": self._raw_params["account"]
+            }
+            await self._init_success_callback(success, error, **params)

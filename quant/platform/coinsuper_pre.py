@@ -293,7 +293,7 @@ class CoinsuperPreTrade:
             object. `order_update_callback` is like `async def on_order_update_callback(order: Order): pass` and this
             callback function will be executed asynchronous when some order state updated.
         init_success_callback: You can use this param to specific a async callback function when you initializing Trade
-            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error): pass`
+            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error, **kwargs): pass`
             and this callback function will be executed asynchronous after Trade module object initialized successfully.
         check_order_interval: The interval time(seconds) for loop run task to check order status. (default is 2 seconds)
     """
@@ -548,6 +548,12 @@ class CoinsuperPreTrade:
             status_updated = True
         elif state == "CANCEL":
             order.status = ORDER_STATUS_CANCELED
+            if order.order_type == ORDER_TYPE_LIMIT:
+                if float(order.remain) != float(order_info["quantityRemaining"]):
+                    order.remain = float(order_info["quantityRemaining"])
+            else:
+                if float(order.remain) != float(order_info["amountRemaining"]):
+                    order.remain = float(order_info["amountRemaining"])
             status_updated = True
         else:
             logger.warn("state error! order_info:", order_info, caller=self)

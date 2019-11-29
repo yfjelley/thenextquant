@@ -292,17 +292,6 @@ class HuobiFutureRestAPI:
         success, error = await self.request("POST", uri, body=body, auth=True)
         return success, error
 
-    async def get_kline(self, symbol, size=300, period="5min"):
-        uri = "/market/history/kline"
-        url_params = {'symbol': symbol, "period": period, "size": size}
-        if url_params:
-            query = "&".join(["{}={}".format(k, url_params[k]) for k in sorted(url_params.keys())])
-            uri += "?" + query
-        url = urljoin(self._host, uri)
-
-        success, error = await self.request("GET", url, params='', auth=False)
-        return success, error
-
     async def request(self, method, uri, params=None, body=None, headers=None, auth=False):
         """ Do HTTP request.
 
@@ -388,7 +377,7 @@ class HuobiFutureTrade:
             object. `position_update_callback` is like `async def on_position_update_callback(order: Position): pass` and
             this callback function will be executed asynchronous when some position state updated.
         init_success_callback: You can use this param to specific a async callback function when you initializing Trade
-            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error): pass`
+            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error, **kwargs): pass`
             and this callback function will be executed asynchronous after Trade module object initialized successfully.
     """
 
@@ -713,6 +702,7 @@ class HuobiFutureTrade:
             order.remain = 0
         elif status in [5, 7]:
             order.status = ORDER_STATUS_CANCELED
+            order.remain = int(order.quantity) - int(order_info["trade_volume"])
         else:
             return
 

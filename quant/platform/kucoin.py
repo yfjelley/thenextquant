@@ -313,7 +313,7 @@ class KucoinTrade:
             object. `order_update_callback` is like `async def on_order_update_callback(order: Order): pass` and this
             callback function will be executed asynchronous when some order state updated.
         init_success_callback: You can use this param to specific a async callback function when you initializing Trade
-            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error): pass`
+            object. `init_success_callback` is like `async def on_init_success_callback(success: bool, error: Error, **kwargs): pass`
             and this callback function will be executed asynchronous after Trade module object initialized successfully.
         check_order_interval: The interval time(seconds) for loop run task to check order status. (default is 2 seconds)
     """
